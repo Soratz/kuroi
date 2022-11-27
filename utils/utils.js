@@ -34,6 +34,7 @@ async function connectionSafeDestroyer(oldState, newState) {
 		// Seems to be reconnecting to a new channel - ignore disconnect
 	} catch (error) {
 		// Seems to be a real disconnect which SHOULDN'T be recovered from
+		console.log('Connection is destroyed due to some problems.');
 		connection.destroy();
 	}
 }
@@ -70,7 +71,7 @@ async function isVoiceChannelJoinable(interaction) {
 	return null;
 }
 
-async function playResourceFromConnection(connection, player, audioResource) {
+async function playResourceFromConnection(connection, player, audioResource, queue) {
 	player.play(audioResource);
 	player.on('error', error => {
 		console.error(`Error ${error.name}: ${error.message} with audioResource.`);
@@ -82,6 +83,10 @@ async function playResourceFromConnection(connection, player, audioResource) {
 	connection.subscribe(player);
 	connection.onSubscriptionRemoved = (subscription) => {
 		console.log('An audio player subscription is removed.');
+		// clean the queue if there is something when a subscription is broken.
+		if (queue) {
+			queue.empty();
+		}
 	};
 }
 

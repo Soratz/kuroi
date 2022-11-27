@@ -26,6 +26,10 @@ class Queue {
 		}
 		return null;
 	}
+
+	empty() {
+		this.queue.length = 0;
+	}
 }
 
 module.exports = {

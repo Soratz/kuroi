@@ -1,7 +1,7 @@
 const { ActionRowBuilder, EmbedBuilder } = require('discord.js');
 const { SelectMenuBuilder } = require('discord.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { createAudioResource, StreamType, createAudioPlayer, AudioPlayerStatus } = require('@discordjs/voice');
+const { createAudioResource, StreamType, createAudioPlayer, AudioPlayerStatus, getVoiceConnection } = require('@discordjs/voice');
 const { youtubeQueryURL } = require('../config.json');
 const fetch = require('node-fetch');
 const ytdl = require('ytdl-core');
@@ -14,11 +14,13 @@ const videoData = new Collection();
 const audioPlayers = new Collection();
 const queues = new Collection();
 
-// TODO: kuroi ye biri disconnect atarsa hala connectionı varmış gibi şarkı çalıyor ama channela gelmiyor
-// TODO: Queue eklenecek, şarkılar için
+// TODO: şu an çalan şarkıyı görebilelim
+// Todo: sonraki şarkıya geçebilelim veya önceki şarkıya dönsün
+// todo: bu kontrollerin olması için chatta bir şey updatelenebilir veya tekrar command alınabilir
+// TODO: kuroi başka channela movelanırsa çalmaya devam ediyor, bir şey yapmak gerekir mi?
 // TODO: Şarkı çalarken başka bir yerden çağırınca oraya gitmiyo? gitmesi lazım mı ki?
 // - eğer kimse yoksa çaldığı yerde çağırıldığı gidebilir.
-// TODO: Bitince şarkı sıradaki şarkıya geçsin veya sırada şarkı yoksa bitsin.
+// TODO: Bitince şarkı sıradaki şarkıya geçsin veya sırada şarkı yoksa ayrılsın channeldan.
 
 async function execute(interaction) {
 	// first check if we can create a voice channel and join it by creating a connection
@@ -71,11 +73,12 @@ async function execute(interaction) {
 		.setURL(null)
 		.setThumbnail(null);
 
-	if (playerStatus != AudioPlayerStatus.Idle) {
+	if (playerStatus === AudioPlayerStatus.Playing || playerStatus === AudioPlayerStatus.Buffering) {
 		// print queue add message
 		embed.setFields({ name: 'Şu an bir şarkı çalıyor.', value: 'Aşağıdaki listeden bir şarkı seçip sıraya ekleyebilirsin.' });
 	} else {
-		embed.setFields(null);
+		// using splice to remove the previously set field.
+		embed.spliceFields(0, 1);
 		embed.setDescription('Aşağıdaki listeden bir şarkı seçebilirsin.');
 	}
 	await interaction.reply({ embeds: [embed], components: [selectionRow] });
@@ -98,8 +101,9 @@ async function selectSong(interaction) {
 	}
 	const videoURL = 'https://www.youtube.com/watch?v=' + videoId;
 	const avatarURL = interaction.member.displayAvatarURL({ format: 'png' });
-	// If the player status not in idle, then add to queue. Otherwise, play it.
-	if (playerStatus != AudioPlayerStatus.Idle) {
+	// If the player status in playing or buffering, then add to queue.
+	console.log('Current player status: ', playerStatus);
+	if (playerStatus === AudioPlayerStatus.Buffering || playerStatus === AudioPlayerStatus.Playing) {
 		// Create a queue if there isn't any for the guild that interaction came from
 		let queue = queues.get(interaction.guildId);
 		if (!queue) {
@@ -108,7 +112,7 @@ async function selectSong(interaction) {
 		}
 		// if queue returns 0, then the song couldn't add to the queue
 		const que_len = queue.enqueue(videoSnippet);
-		if (que_len == 0) {
+		if (que_len === 0) {
 			await interaction.update({ content: 'Sıra dolu olduğu için şarkınızı sıraya ekleyemedim. :(', embeds: [], components: [] });
 			throw 'Can\'t add a song to queue.';
 		}
@@ -123,7 +127,7 @@ async function selectSong(interaction) {
 	}
 	const resource = await createResourceFromYoutube(videoId);
 	// Sending audio player if its already exists, and overwriting it.
-	await playResourceFromConnection(connection, audioPlayer, resource);
+	await playResourceFromConnection(connection, audioPlayer, resource, queues.get(interaction.guildId));
 	embed.setTitle(videoSnippet.title)
 		.setAuthor({ name: interaction.member.displayName, iconURL: avatarURL })
 		.setURL(videoURL)
@@ -141,9 +145,37 @@ async function getOrCreateAudioPlayer(guildId) {
 		audioPlayer.on(AudioPlayerStatus.Playing, () => {
 			console.log('The audio player has started playing at %s! Status: %s', guildId, audioPlayer.state.status);
 		});
-		audioPlayer.on(AudioPlayerStatus.Idle, () => {
+		audioPlayer.on(AudioPlayerStatus.Idle, async () => {
 			// Should go to the song in the queue
 			console.log('The audio player is now idle at %s. Status: %s', guildId, audioPlayer.state.status);
+			const queue = queues.get(guildId);
+			const nextVideoSnippet = queue.dequeue();
+			const connection = getVoiceConnection(guildId);
+			if (nextVideoSnippet && connection) {
+				const videoId = nextVideoSnippet.videoId;
+				const resource = await createResourceFromYoutube(videoId);
+				// Sending audio player if its already exists, and overwriting it.
+				await playResourceFromConnection(connection, audioPlayer, resource, queue);
+			} else {
+				// cleaning the connection and audioplayer resources
+				audioPlayer.stop();
+				if (connection) {
+					connection.destroy();
+				}
+			}
+		});
+		audioPlayer.on(AudioPlayerStatus.AutoPaused, () => {
+			// Just empty the queue when its autopaused
+			queues.get(guildId).empty();
+			console.log('The audio player is now autopaused at %s. Status: %s', guildId, audioPlayer.state.status);
+		});
+		audioPlayer.on(AudioPlayerStatus.Paused, () => {
+			// No need to empty the queue when manually paused.
+			console.log('The audio player is now paused at %s. Status: %s', guildId, audioPlayer.state.status);
+		});
+		audioPlayer.on(AudioPlayerStatus.Buffering, () => {
+			// Buffering
+			console.log('The audio player is now buffering at %s. Status: %s', guildId, audioPlayer.state.status);
 		});
 	}
 	return audioPlayer;
