@@ -14,7 +14,7 @@ const videoData = new Collection();
 const audioPlayers = new Collection();
 const queues = new Collection();
 
-// TODO: şu an çalan şarkıyı görebilelim
+// TODO: şu an çalan şarkıyı görebilelim ve queueyu
 // Todo: sonraki şarkıya geçebilelim veya önceki şarkıya dönsün
 // todo: bu kontrollerin olması için chatta bir şey updatelenebilir veya tekrar command alınabilir
 // TODO: kuroi başka channela movelanırsa çalmaya devam ediyor, bir şey yapmak gerekir mi?
@@ -146,27 +146,42 @@ async function getOrCreateAudioPlayer(guildId) {
 			console.log('The audio player has started playing at %s! Status: %s', guildId, audioPlayer.state.status);
 		});
 		audioPlayer.on(AudioPlayerStatus.Idle, async () => {
-			// Should go to the song in the queue
-			console.log('The audio player is now idle at %s. Status: %s', guildId, audioPlayer.state.status);
-			const queue = queues.get(guildId);
-			const nextVideoSnippet = queue.dequeue();
-			const connection = getVoiceConnection(guildId);
-			if (nextVideoSnippet && connection) {
-				const videoId = nextVideoSnippet.videoId;
-				const resource = await createResourceFromYoutube(videoId);
-				// Sending audio player if its already exists, and overwriting it.
-				await playResourceFromConnection(connection, audioPlayer, resource, queue);
-			} else {
-				// cleaning the connection and audioplayer resources
-				audioPlayer.stop();
-				if (connection) {
-					connection.destroy();
+			try {
+				// Should go to the song in the queue
+				console.log('The audio player is now idle at %s. Status: %s', guildId, audioPlayer.state.status);
+				const queue = queues.get(guildId);
+				const connection = getVoiceConnection(guildId);
+				if (!queue || queue.length() == 0) {
+					// cleaning the connection and audioplayer resources if there is no need
+					audioPlayer.stop();
+					if (connection) {
+						connection.destroy();
+					}
+				} else if (connection) {
+					const nextVideoSnippet = queue.dequeue();
+					if (nextVideoSnippet) {
+						const videoId = nextVideoSnippet.videoId;
+						const resource = await createResourceFromYoutube(videoId);
+						// Sending audio player if its already exists, and overwriting it.
+						await playResourceFromConnection(connection, audioPlayer, resource, queue);
+					} else {
+						// nothing at the queue so just destroy the resources
+						audioPlayer.stop();
+						connection.destroy();
+					}
 				}
+			} catch (error) {
+				// in case of error, just stop the audio player and reset connection to be safe
+				console.error(error);
+				audioPlayer.stop();
+				const connection = getVoiceConnection(guildId);
+				if (connection) { connection.destroy(); }
 			}
 		});
 		audioPlayer.on(AudioPlayerStatus.AutoPaused, () => {
 			// Just empty the queue when its autopaused
-			queues.get(guildId).empty();
+			const queue = queues.get(guildId);
+			if (queue) { queue.empty(); }
 			console.log('The audio player is now autopaused at %s. Status: %s', guildId, audioPlayer.state.status);
 		});
 		audioPlayer.on(AudioPlayerStatus.Paused, () => {
