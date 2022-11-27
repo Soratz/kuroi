@@ -1,4 +1,5 @@
 const { VoiceConnectionStatus, entersState, getVoiceConnection, joinVoiceChannel, createAudioPlayer } = require('@discordjs/voice');
+const { masterID } = require('../config.json');
 
 // const ADD_QUOTE = 0;
 // TODO: this ids belongs to a config file but currently WIP
@@ -13,6 +14,10 @@ function isPriveleged(userID) {
 	});
 
 	return priveleged;
+}
+
+function isMaster(userID) {
+	return userID === masterID;
 }
 
 async function connectionSafeDestroyer(oldState, newState) {
@@ -33,9 +38,11 @@ async function connectionSafeDestroyer(oldState, newState) {
 	}
 }
 
+// Creates or gets the already existing voice connection.
 async function createVoiceConnection(interaction) {
-	if (getVoiceConnection(interaction.guildId)) {
-		return getVoiceConnection(interaction.guildId);
+	const previos_conn = getVoiceConnection(interaction.guildId);
+	if (previos_conn) {
+		return previos_conn;
 	}
 	const voiceChannel = await isVoiceChannelJoinable(interaction);
 	if (voiceChannel && voiceChannel.joinable) {
@@ -91,6 +98,7 @@ async function playResourceFromInteraction(interaction, audioResource, player = 
 }
 
 module.exports = {
+	isMaster,
 	isPriveleged,
 	connectionSafeDestroyer,
 	createVoiceConnection,

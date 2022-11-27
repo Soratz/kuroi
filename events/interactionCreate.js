@@ -2,7 +2,12 @@ async function execute(interaction) {
 	if (interaction.isSelectMenu()) {
 		if (interaction.customId === 'selectSong') {
 			const searchCommand = interaction.client.commands.get('ara');
-			searchCommand.selectSong(interaction);
+			try {
+				await searchCommand.selectSong(interaction);
+			} catch (error) {
+				console.error(error);
+				await interaction.update({ content: 'Bir hata oluştu!', embeds: [], components: [] });
+			}
 		}
 	}
 	// return if it isn't a command.

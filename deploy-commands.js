@@ -27,6 +27,9 @@ const rest = new REST({ version: '10' }).setToken(secret);
 		// Currently only applying commands to global commands.
 		await rest.put(Routes.applicationCommands(clientId), { body: commands });
 		console.log('Successfully registered application commands.');
+		for (const commandName of commandFiles) {
+			console.log(' - %s', commandName);
+		}
 	} catch (error) {
 		console.error(error);
 	}

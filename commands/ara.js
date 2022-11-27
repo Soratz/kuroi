@@ -1,5 +1,5 @@
-const { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
-const { Events, SelectMenuBuilder } = require('discord.js');
+const { ActionRowBuilder, EmbedBuilder } = require('discord.js');
+const { SelectMenuBuilder } = require('discord.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { createAudioResource, StreamType, createAudioPlayer, AudioPlayerStatus } = require('@discordjs/voice');
 const { youtubeQueryURL } = require('../config.json');
@@ -14,8 +14,10 @@ const videoData = new Collection();
 const audioPlayers = new Collection();
 const queues = new Collection();
 
+// TODO: kuroi ye biri disconnect atarsa hala connectionı varmış gibi şarkı çalıyor ama channela gelmiyor
 // TODO: Queue eklenecek, şarkılar için
 // TODO: Şarkı çalarken başka bir yerden çağırınca oraya gitmiyo? gitmesi lazım mı ki?
+// - eğer kimse yoksa çaldığı yerde çağırıldığı gidebilir.
 // TODO: Bitince şarkı sıradaki şarkıya geçsin veya sırada şarkı yoksa bitsin.
 
 async function execute(interaction) {
@@ -36,6 +38,7 @@ async function execute(interaction) {
 	videoData.clear();
 	for (const item of result.items) {
 		if (item.kind == 'youtube#searchResult') {
+			item.snippet.videoId = item.id.videoId;
 			videoData.set(item.id.videoId, item.snippet);
 			videoOptions.push({
 				label: item.snippet.title.slice(0, 99),
@@ -50,13 +53,6 @@ async function execute(interaction) {
 		return;
 	}
 
-	// Create a queue if there isn't any for the guild that interaction came from
-	if (!queues.get(interaction.guildId)) {
-		queues.set(interaction.guildId, new Queue());
-	}
-
-	const videoURL = 'https://www.youtube.com/watch?v=' + videoData.firstKey();
-	const videoSnippet = videoData.first();
 	const selectionRow = new ActionRowBuilder()
 		.addComponents(
 			new SelectMenuBuilder()
@@ -64,50 +60,96 @@ async function execute(interaction) {
 				.setPlaceholder('Diğer videolar...')
 				.addOptions(videoOptions),
 		);
+
+	// First check the queue before playing.
+	// if there is something playing we should add to the queue
+	const audioPlayer = await getOrCreateAudioPlayer(interaction.guildId);
+	const playerStatus = audioPlayer.state.status;
 	const avatarURL = interaction.member.displayAvatarURL({ format: 'png' });
+	embed.setTitle('Listeden bir şarkı seç')
+		.setAuthor({ name: interaction.member.displayName, iconURL: avatarURL })
+		.setURL(null)
+		.setThumbnail(null);
+
+	if (playerStatus != AudioPlayerStatus.Idle) {
+		// print queue add message
+		embed.setFields({ name: 'Şu an bir şarkı çalıyor.', value: 'Aşağıdaki listeden bir şarkı seçip sıraya ekleyebilirsin.' });
+	} else {
+		embed.setFields(null);
+		embed.setDescription('Aşağıdaki listeden bir şarkı seçebilirsin.');
+	}
+	await interaction.reply({ embeds: [embed], components: [selectionRow] });
+	embed.setDescription(null);
+}
+
+async function selectSong(interaction) {
+	// first check if we can create a voice channel and join it by creating a connection
+	const connection = await createVoiceConnection(interaction);
+	if (!connection || interaction.values.length == 0) {
+		await interaction.update({ content: 'Şu an bir şeyler dinlemeyelim en iyisi.', embeds: [], component: [] });
+		return;
+	}
+	const videoId = interaction.values[0];
+	const audioPlayer = await getOrCreateAudioPlayer(interaction.guildId);
+	const playerStatus = audioPlayer.state.status;
+	const videoSnippet = videoData.get(videoId);
+	if (!videoSnippet) {
+		await interaction.update({ content: 'Bu seçim artık geçerli değil ya. Yeniden arayabilirsin.', embeds: [], component: [] });
+	}
+	const videoURL = 'https://www.youtube.com/watch?v=' + videoId;
+	const avatarURL = interaction.member.displayAvatarURL({ format: 'png' });
+	// If the player status not in idle, then add to queue. Otherwise, play it.
+	if (playerStatus != AudioPlayerStatus.Idle) {
+		// Create a queue if there isn't any for the guild that interaction came from
+		let queue = queues.get(interaction.guildId);
+		if (!queue) {
+			queue = new Queue();
+			queues.set(interaction.guildId, queue);
+		}
+		// if queue returns 0, then the song couldn't add to the queue
+		const que_len = queue.enqueue(videoSnippet);
+		if (que_len == 0) {
+			await interaction.update({ content: 'Sıra dolu olduğu için şarkınızı sıraya ekleyemedim. :(', embeds: [], components: [] });
+			throw 'Can\'t add a song to queue.';
+		}
+		// else then we added to the queue with no problem
+		embed.setTitle(`Şarkınız ${que_len}. sıraya eklendi.`)
+			.setAuthor({ name: interaction.member.displayName, iconURL: avatarURL })
+			.setURL(videoURL)
+			.setThumbnail(videoSnippet.thumbnails.high.url)
+			.setFields({ name: 'Sıraya eklenen video:', value: videoSnippet.title });
+		await interaction.update({ embeds: [embed], components: [] });
+		return;
+	}
+	const resource = await createResourceFromYoutube(videoId);
+	// Sending audio player if its already exists, and overwriting it.
+	await playResourceFromConnection(connection, audioPlayer, resource);
 	embed.setTitle(videoSnippet.title)
 		.setAuthor({ name: interaction.member.displayName, iconURL: avatarURL })
 		.setURL(videoURL)
 		.setThumbnail(videoSnippet.thumbnails.high.url)
 		.setFields({ name: 'Video Süresi: ', value: 'İnş burada video süresi olacak' });
 
-	// First check the queue before playing.
-	const queue = queues.get(interaction.guildId);
-	// if there is something playing we should add to the queue
-	const audioPlayer = await getOrCreateAudioPlayer(interaction.guildId);
-	const playerStatus = audioPlayer.state.status;
-	if (playerStatus != AudioPlayerStatus.Idle) {
-		// queue.enqueue({"video"});
-	}
-	// Let's play our video
-	const stream = ytdl(videoURL, {
-		filter : 'audioonly',
-		fmt: 'mp3',
-		// high values to streaming for longer
-		highWaterMark: 1 << 62,
-		liveBuffer: 1 << 62,
-		// disabling chunking is recommended in discord bot
-		dlChunkSize: 0,
-		bitrate: 128,
-		quality: 'lowestaudio',
-	});
-	const resource = createAudioResource(stream, { inputType: StreamType.Arbitrary });
-	await playResourceFromConnection(connection, audioPlayer, resource);
-	await interaction.reply({ embeds: [embed], components: [selectionRow] });
+	interaction.update({ embeds: [embed], components: [] });
 }
 
-async function selectSong(interaction) {
-	// first check if we can create a voice channel and join it by creating a connection
-	const connection = await createVoiceConnection(interaction);
-	if (!connection) {
-		await interaction.reply({ content: 'Şu an bir şeyler aramayalım.', ephemeral: true });
-		return;
+async function getOrCreateAudioPlayer(guildId) {
+	let audioPlayer = audioPlayers.get(guildId);
+	if (!audioPlayer) {
+		audioPlayer = createAudioPlayer();
+		audioPlayers.set(guildId, audioPlayer);
+		audioPlayer.on(AudioPlayerStatus.Playing, () => {
+			console.log('The audio player has started playing at %s! Status: %s', guildId, audioPlayer.state.status);
+		});
+		audioPlayer.on(AudioPlayerStatus.Idle, () => {
+			// Should go to the song in the queue
+			console.log('The audio player is now idle at %s. Status: %s', guildId, audioPlayer.state.status);
+		});
 	}
-	if (interaction.values.length == 0) {
-		// nothing selected
-		return;
-	}
-	const videoId = interaction.values[0];
+	return audioPlayer;
+}
+
+async function createResourceFromYoutube(videoId) {
 	const videoURL = 'https://www.youtube.com/watch?v=' + videoId;
 	const stream = ytdl(videoURL, {
 		filter : 'audioonly',
@@ -119,37 +161,7 @@ async function selectSong(interaction) {
 		bitrate: 128,
 		quality: 'lowestaudio',
 	});
-	const resource = createAudioResource(stream, { inputType: StreamType.Arbitrary });
-	// Sending audio player if its already exists, and overwriting it.
-	const audioPlayer = await getOrCreateAudioPlayer(interaction.guildId);
-	await playResourceFromConnection(connection, audioPlayer, resource);
-	const videoSnippet = videoData.get(videoId);
-	if (videoSnippet) {
-		const avatarURL = interaction.member.displayAvatarURL({ format: 'png' });
-		embed.setTitle(videoSnippet.title)
-			.setAuthor({ name: interaction.member.displayName, iconURL: avatarURL })
-			.setURL(videoURL)
-			.setThumbnail(videoSnippet.thumbnails.high.url)
-			.setFields({ name: 'Video Süresi: ', value: 'İnş burada video süresi olacak' });
-
-		interaction.update({ embeds: [embed] });
-	}
-}
-
-async function getOrCreateAudioPlayer(guildId) {
-	let audioPlayer = audioPlayers.get(guildId);
-	if (!audioPlayer) {
-		audioPlayer = createAudioPlayer();
-		audioPlayers.set(guildId, audioPlayer);
-		audioPlayer.on(AudioPlayerStatus.Playing, () => {
-			console.log('The audio player has started playing! Status: ' + audioPlayer.state.status);
-		});
-		audioPlayer.on(AudioPlayerStatus.Idle, () => {
-			// Should go to the song in the queue
-			console.log('The audio player is now idle. Status: ' + audioPlayer.state.status);
-		});
-	}
-	return audioPlayer;
+	return createAudioResource(stream, { inputType: StreamType.Arbitrary });
 }
 
 module.exports = {
@@ -164,4 +176,5 @@ module.exports = {
 	execute: execute,
 	selectSong: selectSong,
 	queues: queues,
+	audioPlayers: audioPlayers,
 };
