@@ -20,9 +20,12 @@ const client = new Client({ intents: intents });
 
 // Attaching commands to client to access it from the client instance from other files.
 client.commands = new Collection();
+client.contextMenuCommands = new Collection();
+
 const commandsPath = path.join(__dirname, 'commands');
 const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
 
+// Reading command files
 for (const file of commandFiles) {
 	const filePath = path.join(commandsPath, file);
 	const command = require(filePath);

@@ -15,36 +15,45 @@ async function createQuote(quoteMessage, authorName, authorID, date, imageURL, c
 	await quote.save();
 }
 
+function generateQuery(context, quoteAuthorUser) {
+	const query = { 'authorID': /.*/, 'quote': /.*/ };
+	// any given context
+	if (context) {
+		query['quote'] = new RegExp(context, 'gmi');
+	}
+	// a selected user
+	if (quoteAuthorUser) {
+		query['authorID'] = quoteAuthorUser.id;
+	}
+	return query;
+}
+
+async function replyWithQuoteByQuery(interaction, query) {
+	const count = await Quote.count(query);
+	if (count == 0) {
+		await interaction.editReply('Replik bulamadım sanırsam ya.');
+		return;
+	}
+	const random = Math.floor(Math.random() * count);
+	const quote = await Quote.findOne(query).skip(random).exec();
+	if (!quote) {
+		await interaction.editReply('Sana replik yok!');
+		console.log('Related quote hasn\'t been found.');
+		console.log('Query: ', query);
+		console.log('Query count: ', count);
+		return;
+	}
+	const quoteString = await quote.toString(interaction);
+	await interaction.editReply(quoteString);
+}
+
 async function execute(interaction) {
 	if (interaction.options.getSubcommand() === 'bak') {
 		await interaction.deferReply();
 		const quoteAuthorUser = interaction.options.getUser('kullanıcı');
 		const context = interaction.options.getString('içerik');
-		const query = { 'authorID': /.*/, 'quote': /.*/ };
-		// any given context
-		if (context) {
-			query['quote'] = new RegExp(context, 'gmi');
-		}
-		// a selected user
-		if (quoteAuthorUser) {
-			query['authorID'] = quoteAuthorUser.id;
-		}
-		const count = await Quote.count(query);
-		if (count == 0) {
-			await interaction.editReply('Öyle bir replik yok sanırsam.');
-			return;
-		}
-		const random = Math.floor(Math.random() * count);
-		const quote = await Quote.findOne(query).skip(random).exec();
-		if (!quote) {
-			await interaction.editReply('Sana replik yok!');
-			console.log('Related quote hasn\'t been found.');
-			console.log('Query: ', query);
-			console.log('Query count: ', count);
-			return;
-		}
-		const quoteString = await quote.toString(interaction);
-		await interaction.editReply(quoteString);
+		const query = generateQuery(context, quoteAuthorUser);
+		await replyWithQuoteByQuery(interaction, query);
 	} else if (interaction.options.getSubcommand() === 'ekle') {
 		await interaction.deferReply();
 		const creatorID = interaction.user.id;
@@ -97,4 +106,6 @@ module.exports = {
 						.setRequired(false)
 						.setDescription('Eğer bir görsel varsa linkini ekleyebilirsin.'))),
 	execute: execute,
+	generateQuery,
+	replyWithQuoteByQuery,
 };
