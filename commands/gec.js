@@ -7,7 +7,7 @@ async function execute(interaction) {
 	const audioPlayer = araCommand.audioPlayers.get(guildId);
 	// If playing anything
 	if (audioPlayer && audioPlayer.state.status === AudioPlayerStatus.Playing) {
-		const songName = await araCommand.playNextSongIfAvailable();
+		const songName = await araCommand.playNextSongIfAvailable(guildId, audioPlayer);
 		if (songName) {
 			interaction.reply(`Tamamdır, sıradaki şarkımız: \`\`${songName}\`\``);
 			return;
