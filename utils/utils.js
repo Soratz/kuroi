@@ -73,7 +73,7 @@ async function isVoiceChannelJoinable(interaction) {
 
 async function playResourceFromConnection(connection, player, audioResource, queue) {
 	player.play(audioResource);
-	player.on('error', error => {
+	player.once('error', error => {
 		console.error(`Error ${error.name}: ${error.message} with audioResource.`);
 		console.error(`Error cause: ${error.cause}`);
 		console.error(`Stack trace: ${error.prepareStackTrace}`);
