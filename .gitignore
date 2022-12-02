@@ -1,5 +1,10 @@
-.env
-config.json
+secret.json
+
+# hidden files
+.*
+
+# package-lock
+package-lock.json
 
 # resources directory (generally audio files in here so no need)
 resources/
@@ -9,9 +14,6 @@ utility_scripts/
 
 # no need for batch files
 *.bat
-
-# json files
-*.json
 
 # audio files
 *.mp3

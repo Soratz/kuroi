@@ -1,7 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, IntentsBitField } = require('discord.js');
-const { secret } = require('./config.json');
+const { secret } = require('./secret.json');
 const { generateDependencyReport } = require('@discordjs/voice');
 
 console.log(generateDependencyReport());

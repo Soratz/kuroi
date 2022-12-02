@@ -13,7 +13,7 @@ async function execute(interaction) {
 			return;
 		}
 	}
-	interaction.reply({ content: 'Eeee, geçecek bir şey yok.', ephemeral: true });
+	interaction.reply({ content: 'Eeee, geçecek bir şey yok.' });
 }
 
 module.exports = {

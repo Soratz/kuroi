@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const { mongodbConnectionURL } = require('../../config.json');
+const { mongodbConnectionURL } = require('../../secret.json');
 mongoose.connect(mongodbConnectionURL, { useNewUrlParser: true, useUnifiedTopology: true });
 
 const quotesSchema = new mongoose.Schema({
