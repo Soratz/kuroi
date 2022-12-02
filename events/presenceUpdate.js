@@ -5,8 +5,11 @@ It's all posted in the Selfr -> #komut -> SpotifyLog | GameLog threads
 */
 const { Events, EmbedBuilder } = require('discord.js');
 const { spotifyThreadId, gameThreadId, komutChannelId, selfrID } = require('../config.json');
+const { isTestBot } = require('../secret.json');
 
 async function execute(oldPresence, newPresence) {
+	// If this is runing in test bot (Amadeus or Kuroi) then bypass this function to don't cause duplicates in logs
+	if (isTestBot == true) return;
 	// Sometimes presence update gets triggered even if there is not one. Couldn't figure out why.
 	if (!oldPresence) return;
 	// Don't log bot activity
