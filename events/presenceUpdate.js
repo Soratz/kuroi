@@ -8,7 +8,7 @@ const { spotifyThreadId, gameThreadId, komutChannelId, selfrID } = require('../c
 const { isTestBot } = require('../secret.json');
 
 async function execute(oldPresence, newPresence) {
-	// If this is runing in test bot (Amadeus or Kuroi) then bypass this function to don't cause duplicates in logs
+	// If this is running in test bot (Amadeus or Kuroi) then bypass this function to don't cause duplicates in logs
 	if (isTestBot == true) return;
 	// Sometimes presence update gets triggered even if there is not one. Couldn't figure out why.
 	if (!oldPresence) return;
