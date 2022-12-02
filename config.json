@@ -1,7 +1,10 @@
 {
 	"masterID":"115464605676863492",
-    "selfrID":"117353309467181058",
-    "servers": [{"id":"117353309467181058","defaultChannel":{"id":"117353309467181058"}}],
+	"selfrID":"117353309467181058",
+	"spotifyThreadId": "1046778293497634848",
+	"gameThreadId": "1046778164292108329",
+	"komutChannelId": "315050313427976199",
+	"servers": [{"id":"117353309467181058","defaultChannel":{"id":"117353309467181058"}}],
 	"settings": {
 		"maxQueueLength": 20
 	}
