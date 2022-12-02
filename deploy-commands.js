@@ -3,8 +3,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { REST } = require('@discordjs/rest');
 const { Routes } = require('discord-api-types/v10');
-const { secret } = require('./secret.json');
-const { clientId, selfrID } = require('./config.json');
+const { clientId, secret } = require('./secret.json');
+const { selfrID } = require('./config.json');
 
 const commands = [];
 const commandsPath = path.join(__dirname, 'commands');
