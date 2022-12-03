@@ -21,6 +21,7 @@ const client = new Client({ intents: intents });
 // Attaching commands to client to access it from the client instance from other files.
 client.commands = new Collection();
 client.contextMenuCommands = new Collection();
+client.buttonCommands = new Collection();
 
 const commandsPath = path.join(__dirname, 'commands');
 const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
@@ -32,6 +33,10 @@ for (const file of commandFiles) {
 	// Set a new item in the commands Collection.
 	// With the key as the command name and the value as the exported module
 	client.commands.set(command.data.name, command);
+	// Add button commands of slash commands if there is
+	if ('buttonExecute' in command) {
+		client.buttonCommands.set(command.data.name, command);
+	}
 }
 
 // Reading event files.
