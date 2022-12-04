@@ -1,5 +1,23 @@
 async function execute(interaction) {
 	const client = interaction.client;
+
+	// Handling button commands, no idea how this was working -Sravdar
+	// Should be only working with buttons in interaction reply of slashcommand
+	if (interaction.isButton()) {
+		const command = interaction.client.buttonCommands.get(interaction.message.interaction.commandName);
+		if (!command) {
+			console.error(`No button command matching ${interaction.message.interaction.commandName} was found.`);
+			return;
+		}
+		try {
+			await command.buttonExecute(interaction);
+			console.log(`${interaction.user.tag} triggered an select button interaction.`);
+		} catch (error) {
+			console.error(`Error executing ${interaction.message.interaction.commandName}`);
+			console.error(error);
+		}
+	}
+
 	// handling select menu commands
 	if (interaction.isSelectMenu()) {
 		console.log(`${interaction.user.tag} triggered an select menu interaction.`);
