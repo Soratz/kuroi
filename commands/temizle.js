@@ -25,7 +25,7 @@ async function execute(interaction) {
 
 async function buttonExecute(interaction) {
 	// Check if clicked by same person. First variable gets user from message context.
-	if (!(interaction.message.content.split(',')[0] == '<@' + interaction.user.id + '>')) {
+	if (interaction.message.interaction.user.id != interaction.user.id) {
 		interaction.reply({ content: 'Bu sorgu sizin için değil!', ephemeral: true });
 		return;
 	}
