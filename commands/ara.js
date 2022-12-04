@@ -5,7 +5,7 @@ const { createAudioResource, StreamType, createAudioPlayer, AudioPlayerStatus, g
 const { youtubeQueryURL } = require('../secret.json');
 const fetch = require('node-fetch');
 const ytdl = require('ytdl-core');
-const { createVoiceConnection, playResourceFromConnection } = require('../utils/utils.js');
+const { createVoiceConnection, playResourceFromConnection, secondsToString } = require('../utils/utils.js');
 const { Queue } = require('../classes/queue.js');
 const { Collection } = require('discord.js');
 
@@ -81,9 +81,10 @@ async function execute(interaction) {
 
 async function selectSong(interaction) {
 	// first check if we can create a voice channel and join it by creating a connection
+	await interaction.deferUpdate();
 	const connection = await createVoiceConnection(interaction);
 	if (!connection || interaction.values.length == 0) {
-		await interaction.update({ content: 'Şu an bir şeyler dinlemeyelim en iyisi.', embeds: [], component: [] });
+		await interaction.editReply({ content: 'Şu an bir şeyler dinlemeyelim en iyisi.', embeds: [], component: [] });
 		return;
 	}
 	const videoId = interaction.values[0];
@@ -91,10 +92,11 @@ async function selectSong(interaction) {
 	const playerStatus = audioPlayer.state.status;
 	const videoSnippet = videoData.get(videoId);
 	if (!videoSnippet) {
-		await interaction.update({ content: 'Bu seçim artık geçerli değil ya. Yeniden arayabilirsin.', embeds: [], component: [] });
+		await interaction.editReply({ content: 'Bu seçim artık geçerli değil ya. Yeniden arayabilirsin.', embeds: [], component: [] });
 	}
 	const videoURL = 'https://www.youtube.com/watch?v=' + videoId;
 	const avatarURL = interaction.member.displayAvatarURL({ format: 'png' });
+	const info = await ytdl.getBasicInfo(videoURL);
 	// If the player status in playing or buffering, then add to queue.
 	console.log('Current player status: ', playerStatus);
 	if (playerStatus === AudioPlayerStatus.Buffering || playerStatus === AudioPlayerStatus.Playing) {
@@ -107,7 +109,7 @@ async function selectSong(interaction) {
 		// if queue returns 0, then the song couldn't add to the queue
 		const que_len = queue.enqueue(videoSnippet);
 		if (que_len === 0) {
-			await interaction.update({ content: 'Sıra dolu olduğu için şarkınızı sıraya ekleyemedim. :(', embeds: [], components: [] });
+			await interaction.editReply({ content: 'Sıra dolu olduğu için şarkınızı sıraya ekleyemedim. :(', embeds: [], components: [] });
 			throw 'Can\'t add a song to queue.';
 		}
 		// else then we added to the queue with no problem
@@ -115,8 +117,11 @@ async function selectSong(interaction) {
 			.setAuthor({ name: interaction.member.displayName, iconURL: avatarURL })
 			.setURL(videoURL)
 			.setThumbnail(videoSnippet.thumbnails.high.url)
-			.setFields({ name: 'Sıraya eklenen video:', value: videoSnippet.title });
-		await interaction.update({ embeds: [embed], components: [] });
+			.setFields(
+				{ name: 'Sıraya eklenen video:', value: videoSnippet.title, inline: true },
+				{ name: 'Video Süresi: ', value: secondsToString(info.videoDetails.lengthSeconds), inline: true },
+			);
+		await interaction.editReply({ embeds: [embed], components: [] });
 		return;
 	}
 	const resource = await createResourceFromYoutube(videoId);
@@ -126,9 +131,9 @@ async function selectSong(interaction) {
 		.setAuthor({ name: interaction.member.displayName, iconURL: avatarURL })
 		.setURL(videoURL)
 		.setThumbnail(videoSnippet.thumbnails.high.url)
-		.setFields({ name: 'Video Süresi: ', value: 'İnş burada video süresi olacak' });
+		.setFields({ name: 'Video Süresi: ', value: secondsToString(info.videoDetails.lengthSeconds) });
 
-	interaction.update({ embeds: [embed], components: [] });
+	interaction.editReply({ embeds: [embed], components: [] });
 }
 
 async function getOrCreateAudioPlayer(guildId) {
@@ -162,7 +167,7 @@ async function getOrCreateAudioPlayer(guildId) {
 
 async function createResourceFromYoutube(videoId) {
 	const videoURL = 'https://www.youtube.com/watch?v=' + videoId;
-	const stream = ytdl(videoURL, {
+	const ytdl_options = {
 		filter : 'audioonly',
 		fmt: 'mp3',
 		highWaterMark: 1 << 62,
@@ -171,7 +176,8 @@ async function createResourceFromYoutube(videoId) {
 		dlChunkSize: 0,
 		bitrate: 128,
 		quality: 'lowestaudio',
-	});
+	};
+	const stream = ytdl(videoURL, ytdl_options);
 	return createAudioResource(stream, { inputType: StreamType.Arbitrary });
 }
 
