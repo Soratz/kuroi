@@ -13,7 +13,7 @@ module.exports = {
 		.setDescription('Girdilerden birini rastgele seçer.')
 		.addStringOption(option =>
 			option.setName('girdi')
-				.setDescription('Tüm objeleri buraya virgül (,) ilere ayırarak yazınız.')
+				.setDescription('Tüm girdileri buraya virgül (,) ile ayırarak yazınız.')
 				.setRequired(true),
 		),
 	execute: execute,
