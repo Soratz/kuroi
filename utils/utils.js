@@ -102,6 +102,17 @@ async function playResourceFromInteraction(interaction, audioResource, player = 
 	return player;
 }
 
+function secondsToString(secondsStr) {
+	const secondsNum = parseInt(secondsStr, 10);
+	const hours = Math.floor(secondsNum / 3600);
+	const minutes = Math.floor((secondsNum % 3600) / 60);
+	const seconds = secondsNum % 60;
+	let timeString = `${seconds} saniye`;
+	if (minutes) { timeString = `${minutes} dakika ` + timeString; }
+	if (hours) { timeString = `${hours} saat ` + timeString; }
+	return timeString;
+}
+
 module.exports = {
 	isMaster,
 	isPriveleged,
@@ -110,4 +121,5 @@ module.exports = {
 	playResourceFromInteraction,
 	isVoiceChannelJoinable,
 	playResourceFromConnection,
+	secondsToString,
 };
