@@ -17,12 +17,21 @@ async function execute(oldPresence, newPresence) {
 	// Don't log bot activity
 	if (oldPresence.user.bot) return;
 
+	// Set presence owner user into variable. Will be used to get user's username and tag.
 	let presenceOwner;
 	if (oldPresence.guild) {
 		presenceOwner = oldPresence.guild.members.cache.get(oldPresence.userId).user;
 	}
 
 	// SPOTIFY PART
+	SpotifyLogger(oldPresence, newPresence, presenceOwner);
+
+	// GAME PART
+	GameLogger(oldPresence, newPresence, presenceOwner);
+
+}
+
+async function SpotifyLogger(oldPresence, newPresence, presenceOwner) {
 	let oldSong;
 	if (oldPresence.activities != null) {
 		oldSong = oldPresence.activities.find(obj => obj.type === 2) ?? null;
@@ -49,7 +58,7 @@ async function execute(oldPresence, newPresence) {
 					.setColor(0x17B817)
 					.setTitle(newSong.details)
 					.setURL(`https://open.spotify.com/search/${spofiySearchLink}`)
-					.setAuthor({ name: presenceOwner.username, iconURL: presenceOwner.avatarURL() })
+					.setAuthor({ name: presenceOwner.tag, iconURL: presenceOwner.avatarURL() })
 					.setDescription(`*by* ${newSong.state}`)
 					.setThumbnail(`https://i.scdn.co/image/${newSong.assets.largeImage.replace('spotify:', '')}`)
 					.setTimestamp();
@@ -59,8 +68,9 @@ async function execute(oldPresence, newPresence) {
 
 		}
 	}
+}
 
-	// GAME PART
+async function GameLogger(oldPresence, newPresence, presenceOwner) {
 	let oldGame;
 	if (oldPresence.activities != null) {
 		oldGame = oldPresence.activities.find(obj => obj.type === 0) ?? null;
@@ -83,7 +93,7 @@ async function execute(oldPresence, newPresence) {
 				.setColor(0x0099FF)
 				.setTitle(newGame)
 			// .setURL('https://discord.js.org/') link for... something in future?
-				.setAuthor({ name: presenceOwner.username, iconURL: presenceOwner.avatarURL() })
+				.setAuthor({ name: presenceOwner.tag, iconURL: presenceOwner.avatarURL() })
 			// .setDescription('Started playing.')
 			// .setThumbnail(newGame.assets.largeImage) couldn't pull game image from activity
 				.setTimestamp();
@@ -92,7 +102,6 @@ async function execute(oldPresence, newPresence) {
 		}
 
 	}
-
 }
 
 module.exports = {
