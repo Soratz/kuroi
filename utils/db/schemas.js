@@ -1,8 +1,8 @@
 const mongoose = require('mongoose');
 
 const { mongodbConnectionURL } = require('../../secret.json');
-mongoose.connect(mongodbConnectionURL, { useNewUrlParser: true, useUnifiedTopology: true });
 mongoose.set('strictQuery', true);
+mongoose.connect(mongodbConnectionURL, { useNewUrlParser: true, useUnifiedTopology: true });
 
 const quotesSchema = new mongoose.Schema({
 	quote: String,
