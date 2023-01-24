@@ -1,8 +1,9 @@
-const fs = require('node:fs');
-const path = require('node:path');
-const { Client, Collection, IntentsBitField } = require('discord.js');
-const { secret } = require('./secret.json');
-const { generateDependencyReport } = require('@discordjs/voice');
+import { Client, Collection, IntentsBitField } from "discord.js";
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { secret } from "./secret.json";
+import { generateDependencyReport } from "@discordjs/voice";
+import { DiscordClient } from "./classes/discordClient";
 
 console.log(generateDependencyReport());
 
@@ -16,12 +17,7 @@ intents.add(
 	IntentsBitField.Flags.GuildVoiceStates);
 
 // Create a new client instance
-const client = new Client({ intents: intents });
-
-// Attaching commands to client to access it from the client instance from other files.
-client.commands = new Collection();
-client.contextMenuCommands = new Collection();
-client.buttonCommands = new Collection();
+const client: DiscordClient = new DiscordClient({ intents: intents });
 
 const commandsPath = path.join(__dirname, 'commands');
 const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
