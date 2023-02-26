@@ -3,6 +3,15 @@ secret.json
 # hidden files
 .*
 
+# do not ignore eslint files
+
+!.eslintrc.json
+!.eslintignore
+
+# typescript built files
+
+built/
+
 # package-lock
 package-lock.json
 
@@ -56,9 +65,6 @@ bower_components
 
 # Compiled binary addons (https://nodejs.org/api/addons.html)
 build/Release
-
-# Compiled javascript codes
-built/
 
 # Dependency directories
 node_modules/
