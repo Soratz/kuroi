@@ -6,6 +6,8 @@ export const data = new SlashCommandBuilder()
 	.setDescription('Çaldığım parçayı döngüye alalım mı?')
 	.setDMPermission(false);
 
+// TODO: there is a latency at the end of the song when repeating it, maybe it can be buffered?
+// TODO: voice channelda olma kontrolü yapılabilir.
 export async function execute(interaction: ChatInputCommandInteraction) {
 	const client = interaction.client as DiscordClient;
 	const queue = client.audioQueues.get(interaction.guildId as string);
