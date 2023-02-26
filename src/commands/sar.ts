@@ -1,6 +1,5 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
 
-
 export const data = new SlashCommandBuilder()
 	.setName('sar')
 	.setDescription('Çaldığım ses parçasını ileriye veya geriye sarabilirsin.')

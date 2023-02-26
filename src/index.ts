@@ -1,9 +1,9 @@
-import { Client, Collection, IntentsBitField } from "discord.js";
-import * as fs from "node:fs";
-import * as path from "node:path";
-import { secret } from "./secret.json";
-import { generateDependencyReport } from "@discordjs/voice";
-import { DiscordClient } from "./classes/discordClient";
+import { IntentsBitField } from 'discord.js';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { secret } from './secret.json';
+import { generateDependencyReport } from '@discordjs/voice';
+import { DiscordClient } from './classes/discordClient';
 
 console.log(generateDependencyReport());
 
@@ -20,7 +20,7 @@ intents.add(
 const client: DiscordClient = new DiscordClient({ intents: intents });
 
 const commandsPath = path.join(__dirname, 'commands');
-const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
+const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js') || file.endsWith('.ts'));
 
 // Reading command files
 for (const file of commandFiles) {

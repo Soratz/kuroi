@@ -5,8 +5,8 @@ import type { Filter } from 'ytdl-core';
 import { YoutubeVideoData } from './youtubeSearch';
 import { Queue } from './queue';
 import { AudioPlayer, AudioPlayerStatus, createAudioPlayer, createAudioResource, entersState,
-	getVoiceConnection, joinVoiceChannel, PlayerSubscription, VoiceConnectionState, VoiceConnectionStatus } from '@discordjs/voice';
-import { Guild, GuildMember, Interaction } from 'discord.js';
+	getVoiceConnection, joinVoiceChannel, PlayerSubscription, VoiceConnectionStatus } from '@discordjs/voice';
+import { ActivityType, Guild, GuildMember, Interaction } from 'discord.js';
 import { settings } from '../config.json';
 import { DiscordClient } from './discordClient';
 
@@ -66,11 +66,21 @@ export class DiscordAudioQueue extends Queue<YoutubeVideoData> {
 		return undefined;
 	}
 
+	stop() {
+		// close looping
+		this.loopEnabled = false;
+		const currentConnection = getVoiceConnection(this.guildId);
+		// Destroy the connection if it still exists
+		if (currentConnection) currentConnection.destroy();
+	}
+
 	// Todo: there can be a logging option for debug purposes.
 	private initializeAudioPlayer(): AudioPlayer {
 		const audioPlayer = createAudioPlayer();
 		audioPlayer.on(AudioPlayerStatus.Playing, () => {
 			console.log('The audio player has started playing at %s! Status: %s', this.guildId, audioPlayer.state.status);
+			// TODO: This activity thing will be weird when bot is used in more than one server.
+			(this.interaction.client as DiscordClient).setActivity(this.peek()?.title, ActivityType.Listening);
 		});
 		audioPlayer.on(AudioPlayerStatus.Idle, async () => {
 			console.log('The audio player is now idle at %s. Status: %s', this.guildId, audioPlayer.state.status);
@@ -78,9 +88,8 @@ export class DiscordAudioQueue extends Queue<YoutubeVideoData> {
 			// Go to the next song
 			if (!this.loopEnabled) this.dequeue();
 			if (this.isEmpty()) {
-				const currentConnection = getVoiceConnection(this.guildId);
-				// Destroy the connection if it still exists
-				if (currentConnection) currentConnection.destroy();
+				this.stop();
+				(this.interaction.client as DiscordClient).setActivity('', undefined);
 			} else {
 				this.play(this.interaction);
 			}
@@ -92,6 +101,7 @@ export class DiscordAudioQueue extends Queue<YoutubeVideoData> {
 			const currentConnection = getVoiceConnection(this.guildId);
 			// Destroy the connection
 			if (currentConnection) currentConnection.destroy();
+			(this.interaction.client as DiscordClient).setActivity('', undefined);
 		});
 		audioPlayer.on(AudioPlayerStatus.Paused, () => {
 			// No need to empty the queue when manually paused.

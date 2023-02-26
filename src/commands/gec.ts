@@ -18,12 +18,16 @@ async function execute(interaction: ChatInputCommandInteraction) {
 	const queue = (interaction.client as DiscordClient).audioQueues.get(guildId);
 	// If playing anything
 	if (queue && !queue.isEmpty()) {
-		const nextSong = queue.dequeue();
+		queue.dequeue();
+		const nextSong = queue.peek();
 		if (nextSong) {
 			const songName = nextSong.title;
 			queue.play(interaction);
 			await interaction.reply(`Tamamdır, sıradaki şarkımız: \`\`${songName}\`\``);
 			return;
+		} else {
+			// if there is no next song stop current song
+			queue.stop();
 		}
 	}
 	await interaction.reply({ content: 'Eeee, geçecek bir şey yok.' });

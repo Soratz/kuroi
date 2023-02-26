@@ -1,5 +1,5 @@
 import { ActionRowBuilder, EmbedBuilder, SlashCommandBuilder, StringSelectMenuBuilder } from '@discordjs/builders';
-import { APISelectMenuOption, ChatInputCommandInteraction, GuildMember, ImageURLOptions, InteractionReplyOptions, StringSelectMenuInteraction } from 'discord.js';
+import { APISelectMenuOption, ChatInputCommandInteraction, GuildMember, ImageURLOptions, InteractionEditReplyOptions, StringSelectMenuInteraction } from 'discord.js';
 import { DiscordAudioQueue } from '../classes/discordAudioQueue';
 import { DiscordClient } from '../classes/discordClient';
 import { youtubeSearch, YoutubeVideoData } from '../classes/youtubeSearch';
@@ -19,7 +19,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 		if (interaction.isRepliable()) interaction.reply('Şu an bir şey aramak istemiyorum.');
 		return;
 	}
-	interaction.deferReply();
+	await interaction.deferReply({ ephemeral: true });
 	const queryString = interaction.options.getString('içerik', true);
 	const videoData = await youtubeSearch(queryString);
 
@@ -38,7 +38,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 		.addComponents(
 			new StringSelectMenuBuilder()
 				.setCustomId('selectSong')
-				.setPlaceholder('Diğer videolar...')
+				.setPlaceholder('Bir video seç')
 				.addOptions(videoOptions),
 		);
 
@@ -50,29 +50,32 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 		.setThumbnail(null);
 	embed.setDescription('Aşağıdaki listeden bir şarkı seçebilirsin.');
 
-	await interaction.editReply({ embeds: [embed], components: [selectionRow] } as InteractionReplyOptions);
+	await interaction.editReply({ embeds: [embed], components: [selectionRow] } as InteractionEditReplyOptions);
 }
 
 export async function selectSong(interaction: StringSelectMenuInteraction) {
 	// Todo: If another user clicks this, ignore this interaction.
 	// Todo: If the member who sent this message is no longer in a voice channel, ignore this interaction.
-	await interaction.deferUpdate();
+	await interaction.update('Seçilen video oynatılmaya hazırlanıyor.');
 	const selectedValue = interaction.values[0];
 	const selectedOption = interaction.component.options.find(option => option.value == selectedValue);
 	if (selectedOption) {
 		const youtubeVideoData = new YoutubeVideoData(selectedOption.label, selectedOption.description as string, selectedValue);
 		// this interaction can't be sent from outside of a guild
 		const client = (interaction.client as DiscordClient);
+		// get quueue if exists or create a queue
 		let queue = client.audioQueues.get(interaction.guildId as string);
 		if (!queue) {
 			queue = new DiscordAudioQueue(interaction);
 			client.audioQueues.set(interaction.guildId as string, queue);
 		}
+		// add to queue
 		queue.enqueue(youtubeVideoData);
+		// if it is the only song in the queue, play it
 		if (queue.getLength() == 1) {
 			const subscription = queue.play(interaction);
 			if (!subscription) {
-				await interaction.editReply({ content: 'Şu an bir şeyler dinlemeyelim en iyisi.', embeds: [], components: [] });
+				await interaction.followUp({ content: 'Şu an bir şeyler dinlemeyelim en iyisi.', embeds: [], components: [], ephemeral: true });
 				// remove the last song we added
 				queue.dequeue();
 			}
@@ -82,12 +85,26 @@ export async function selectSong(interaction: StringSelectMenuInteraction) {
 			embed.setTitle(youtubeVideoData.title)
 				.setAuthor({ name: member.displayName, iconURL: member.displayAvatarURL({ format: 'png' } as ImageURLOptions) })
 				.setURL(youtubeVideoData.videoURL)
-				.setThumbnail(videoInfo.thumbnail_url)
+				.setThumbnail(videoInfo.videoDetails.thumbnails.at(-1)?.url ?? '')
 				.setFields({ name: 'Video Süresi: ', value: secondsToString(videoInfo.videoDetails.lengthSeconds) });
-			await interaction.editReply({ embeds: [embed], components: [] });
+			await interaction.followUp({ embeds: [embed], ephemeral: false });
+		} else {
+			// print the message that says it added to the queue
+			const embed = new EmbedBuilder().setColor(0xFC1C03);
+			const member = interaction.member as GuildMember;
+			const videoInfo = await youtubeVideoData.getInfo();
+			embed.setTitle(`Video ${queue.getLength()}. sıraya eklendi.`)
+				.setAuthor({ name: member.displayName, iconURL: member.displayAvatarURL({ format: 'png' } as ImageURLOptions) })
+				.setURL(youtubeVideoData.videoURL)
+				.setThumbnail(videoInfo.videoDetails.thumbnails.at(-1)?.url ?? '')
+				.setFields(
+					{ name: 'Sıraya eklenen video:', value: youtubeVideoData.title, inline: true },
+					{ name: 'Video Süresi: ', value: secondsToString(videoInfo.videoDetails.lengthSeconds), inline: true },
+				);
+			await interaction.followUp({ embeds: [embed], ephemeral: false });
 		}
 	} else {
-		await interaction.editReply({ content: 'Bu seçim artık geçerli değil ya. Yeniden arayabilirsin.', embeds: [], components: [] });
+		await interaction.followUp({ content: 'Bu seçim artık geçerli değil ya. Yeniden arayabilirsin.', embeds: [], components: [], ephemeral: true });
 	}
 }
 

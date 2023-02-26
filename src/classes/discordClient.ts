@@ -1,4 +1,4 @@
-import { Client, ClientOptions, Collection } from 'discord.js';
+import { ActivityOptions, ActivityType, Client, ClientOptions, Collection, PresenceData } from 'discord.js';
 import { DiscordAudioQueue } from './discordAudioQueue';
 
 export { DiscordClient };
@@ -19,5 +19,19 @@ class DiscordClient extends Client {
 		this.contextMenuCommands = new Collection();
 		this.buttonCommands = new Collection();
 		this.audioQueues = new Collection();
+	}
+
+	setPresence(data: PresenceData) {
+		const user = this.user;
+		if (user) {
+			user.setPresence(data);
+		}
+	}
+
+	setActivity(name: string | undefined, type: ActivityType.Listening | ActivityType.Playing | ActivityType.Watching | undefined) {
+		const user = this.user;
+		if (user && name) {
+			user.setActivity(name, { type: type });
+		}
 	}
 }
