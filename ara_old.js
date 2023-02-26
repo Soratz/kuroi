@@ -1,6 +1,5 @@
 const { ActionRowBuilder, EmbedBuilder } = require('discord.js');
-const { SelectMenuBuilder } = require('discord.js');
-const { SlashCommandBuilder } = require('@discordjs/builders');
+const { SlashCommandBuilder, StringSelectMenuBuilder } = require('@discordjs/builders');
 const { createAudioResource, StreamType, createAudioPlayer, AudioPlayerStatus, getVoiceConnection } = require('@discordjs/voice');
 const { youtubeQueryURL } = require('../secret.json');
 const fetch = require('node-fetch');
@@ -8,7 +7,6 @@ const ytdl = require('ytdl-core');
 const { createVoiceConnection, playResourceFromConnection, secondsToString } = require('../utils/utils.js');
 const { Queue } = require('../classes/queue.js');
 const { Collection } = require('discord.js');
-
 const embed = new EmbedBuilder().setColor(0xFC1C03);
 const videoData = new Collection();
 const audioPlayers = new Collection();
@@ -51,7 +49,7 @@ async function execute(interaction) {
 
 	const selectionRow = new ActionRowBuilder()
 		.addComponents(
-			new SelectMenuBuilder()
+			new StringSelectMenuBuilder()
 				.setCustomId('selectSong')
 				.setPlaceholder('Diğer videolar...')
 				.addOptions(videoOptions),
@@ -124,7 +122,7 @@ async function selectSong(interaction) {
 		await interaction.editReply({ embeds: [embed], components: [] });
 		return;
 	}
-	const resource = await createResourceFromYoutube(videoId);
+	const resource = await createResourceFromYoutube(videoId, 50_000);
 	// Sending audio player if its already exists, and overwriting it.
 	await playResourceFromConnection(connection, audioPlayer, resource, queues.get(interaction.guildId));
 	embed.setTitle(videoSnippet.title)
@@ -164,8 +162,8 @@ async function getOrCreateAudioPlayer(guildId) {
 	}
 	return audioPlayer;
 }
-
-async function createResourceFromYoutube(videoId) {
+// seek should be in ms
+async function createResourceFromYoutube(videoId, seek = 0) {
 	const videoURL = 'https://www.youtube.com/watch?v=' + videoId;
 	const ytdl_options = {
 		filter : 'audioonly',
@@ -197,7 +195,7 @@ async function playNextSongIfAvailable(guildId, audioPlayer) {
 			const nextVideoSnippet = queue.dequeue();
 			if (nextVideoSnippet) {
 				const videoId = nextVideoSnippet.videoId;
-				const resource = await createResourceFromYoutube(videoId);
+				const resource = await createResourceFromYoutube(videoId, 50_000);
 				// Sending audio player if its already exists, and overwriting it.
 				await playResourceFromConnection(connection, audioPlayer, resource, queue);
 				return nextVideoSnippet.title;
@@ -218,7 +216,7 @@ async function playNextSongIfAvailable(guildId, audioPlayer) {
 
 module.exports = {
 	data: new SlashCommandBuilder()
-		.setName('ara')
+		.setName('araold')
 		.setDescription('YouTube\'da şarkı mı aratacaksın?')
 		.setDMPermission(false)
 		.addStringOption(option =>

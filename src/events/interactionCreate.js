@@ -19,7 +19,7 @@ async function execute(interaction) {
 	}
 
 	// handling select menu commands
-	if (interaction.isSelectMenu()) {
+	if (interaction.isStringSelectMenu()) {
 		console.log(`${interaction.user.tag} triggered an select menu interaction.`);
 		if (interaction.customId === 'selectSong') {
 			const searchCommand = client.commands.get('ara');
