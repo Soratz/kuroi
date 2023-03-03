@@ -175,7 +175,6 @@ export class DiscordAudioQueue extends Queue<YoutubeVideoData> {
 			// disabling chunking is recommended in discord bot
 			dlChunkSize: 0,
 			bitrate: 128,
-			quality: 'lowestaudio',
 		};
 		return ytdl(videoData.videoURL, ytdl_options);
 	}
