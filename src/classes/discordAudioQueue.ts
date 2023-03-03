@@ -128,6 +128,19 @@ export class DiscordAudioQueue extends Queue<YoutubeVideoData> {
 				guildId: this.guildId,
 				adapterCreator: (interaction.guild as Guild).voiceAdapterCreator,
 			});
+			// TODO: temporary fix for kuroi
+			connection.on('stateChange', (oldState, newState) => {
+				const oldNetworking = Reflect.get(oldState, 'networking');
+				const newNetworking = Reflect.get(newState, 'networking');
+
+				const networkStateChangeHandler = (oldNetworkState: any, newNetworkState: any) => {
+					const newUdp = Reflect.get(newNetworkState, 'udp');
+					clearInterval(newUdp?.keepAliveInterval);
+				};
+
+				oldNetworking?.off('stateChange', networkStateChangeHandler);
+				newNetworking?.on('stateChange', networkStateChangeHandler);
+			});
 			connection.on(VoiceConnectionStatus.Disconnected, async (oldState, newState) => {
 				try {
 					await Promise.race([
@@ -162,7 +175,6 @@ export class DiscordAudioQueue extends Queue<YoutubeVideoData> {
 			// disabling chunking is recommended in discord bot
 			dlChunkSize: 0,
 			bitrate: 128,
-			quality: 'lowestaudio',
 		};
 		return ytdl(videoData.videoURL, ytdl_options);
 	}
