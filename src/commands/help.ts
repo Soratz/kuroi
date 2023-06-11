@@ -1,7 +1,8 @@
-const { SlashCommandBuilder } = require('@discordjs/builders');
-const { EmbedBuilder } = require('discord.js');
+import { SlashCommandBuilder, EmbedBuilder } from '@discordjs/builders';
+import { ChatInputCommandInteraction } from 'discord.js';
+import { DiscordClient } from '../classes/discordClient';
 
-async function execute(interaction) {
+async function execute(interaction: ChatInputCommandInteraction) {
 	await interaction.deferReply({ ephemeral: true });
 
 	const command = interaction.options.getString('komut');
@@ -12,10 +13,11 @@ async function execute(interaction) {
 	}
 }
 
-async function PrintCommandsList(interaction) {
+async function PrintCommandsList(interaction: ChatInputCommandInteraction) {
 	// Adds all "client.commands.data.name" names in a string
 	let commandString = '';
-	interaction.client.commands.forEach(element => {
+	const client = interaction.client as DiscordClient;
+	client.commands.forEach(element => {
 		commandString += '\n' + element.data.name.toString();
 	});
 
@@ -30,10 +32,12 @@ async function PrintCommandsList(interaction) {
 	interaction.editReply({ embeds: [commandListEmbed] });
 }
 
-async function PrintCommandDetail(interaction, command) {
+// TODO: use a type for command
+async function PrintCommandDetail(interaction: ChatInputCommandInteraction, command: any) {
+	const client = interaction.client as DiscordClient;
 	// Check if given command exist
-	if (interaction.client.commands.has(command)) {
-		const detail = interaction.client.commands.get(command).help;
+	if (client.commands.has(command)) {
+		const detail = client.commands.get(command).help;
 		// Check if help data is included in command
 		if (detail) {
 			const commandDetailEmbed = new EmbedBuilder()
