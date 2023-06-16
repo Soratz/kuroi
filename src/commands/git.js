@@ -14,6 +14,8 @@ async function execute(interaction) {
 	return;
 }
 
+//test comment
+
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('git')
