@@ -39,6 +39,7 @@ export class YoutubeVideoData {
 		this.description = channelTitleDesc;
 		this.videoId = videoId;
 		this.videoURL = 'https://www.youtube.com/watch?v=' + this.videoId;
+		// this.videoURL = 'https://www.youtube.com/watch?v=' + this.videoId + '&bpctr=9999999999&has_verified=1';
 	}
 
 	getStringMenuOption(): APISelectMenuOption {
