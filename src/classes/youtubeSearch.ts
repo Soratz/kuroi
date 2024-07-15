@@ -1,6 +1,6 @@
 import { APISelectMenuOption, Collection } from 'discord.js';
 import fetch from 'node-fetch';
-import ytdl from 'ytdl-core';
+import ytdl from '@distube/ytdl-core';
 import { youtubeApiKey } from '../secret.json';
 const youtubeQueryURL = 'https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=10&regionCode=GB&type=video,playlist&q=${queryString}&key=${youtubeApiKey}';
 const playlistItemsUrl = 'https://youtube.googleapis.com/youtube/v3/playlistItems?part=contentDetails,snippet&playlistId=${playlistId}&maxResults=50&key=${youtubeApiKey}';

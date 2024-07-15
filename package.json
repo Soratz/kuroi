@@ -10,9 +10,9 @@
   "license": "ISC",
   "dependencies": {
     "@discordjs/builders": "^1.4.0",
-    "@discordjs/opus": "^0.9.0",
     "@discordjs/rest": "^1.5.0",
     "@discordjs/voice": "^0.14.0",
+    "@distube/ytdl-core": "^4.13.5",
     "@types/fluent-ffmpeg": "^2.1.20",
     "bufferutil": "^4.0.6",
     "discord-api-types": "^0.37.29",
@@ -20,17 +20,20 @@
     "fluent-ffmpeg": "^2.1.2",
     "mongoose": "^6.8.4",
     "node-fetch": "^2.6.8",
+    "node-pre-gyp": "^0.17.0",
     "npm": "^9.3.1",
+    "opusscript": "^0.0.8",
+    "rebuild": "^0.1.2",
     "sodium-native": "^3.3.0",
     "ts-node": "^10.9.1",
-    "typescript": "^4.9.4",
     "utf-8-validate": "^5.0.9",
-    "ytdl-core": "^4.11.2"
+    "ytdl-core": "^4.11.5"
   },
   "devDependencies": {
     "@types/node-fetch": "^2.6.2",
     "@typescript-eslint/eslint-plugin": "^5.49.0",
     "@typescript-eslint/parser": "^5.49.0",
-    "eslint": "^8.32.0"
+    "eslint": "^8.32.0",
+    "typescript": "5.1"
   }
 }
