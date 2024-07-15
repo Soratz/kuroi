@@ -1,8 +1,8 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { Quote } from '../utils/db/schemas.js';
 import { isPriveleged } from '../utils/utils.js';
-import { ChatInputCommandInteraction, GuildMember, User } from 'discord.js';
-import { ObjectExpression } from 'mongoose';
+import { ChatInputCommandInteraction, User } from 'discord.js';
+// import { ObjectExpression } from 'mongoose';
 
 interface QuoteObject {
 	authorID: string | RegExp;
@@ -50,7 +50,10 @@ async function replyWithQuoteByQuery(interaction: ChatInputCommandInteraction, q
 		console.log('Query count: ', count);
 		return;
 	}
-	const quoteString = await quote.toString();
+	let quoteString = 'No Quote';
+	if ('asString' in quote && typeof quote['asString'] === 'function') {
+		quoteString = await quote.asString(interaction);
+	}
 	await interaction.editReply(quoteString);
 }
 

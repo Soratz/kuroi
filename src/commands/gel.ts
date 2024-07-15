@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { joinVoiceChannel, VoiceConnectionStatus } from '@discordjs/voice';
-import { createAudioPlayer, createAudioResource, NoSubscriberBehavior } from '@discordjs/voice';
+import { createAudioPlayer, createAudioResource } from '@discordjs/voice';
 import { connectionSafeDestroyer } from '../utils/utils.js';
 import { ChatInputCommandInteraction, GuildMember } from 'discord.js';
 
@@ -27,7 +27,7 @@ async function execute(interaction: ChatInputCommandInteraction) {
 			player.on('error', error => {
 				let metaDataTitle = 'No resource';
 				if (error.resource.metadata && typeof error.resource.metadata === 'object' && 'title' in error.resource.metadata) {
-					metaDataTitle = (error.resource.metadata as any).title;
+					metaDataTitle = error.resource.metadata.title as string;
 				}
 				console.error(`Error: ${error.message} with resource ${metaDataTitle}`);
 				player.stop();

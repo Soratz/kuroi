@@ -1,10 +1,13 @@
-async function execute(interaction) {
-	const client = interaction.client;
+import { BaseInteraction, ChannelType } from 'discord.js';
+import { DiscordClient } from '../classes/discordClient';
+
+async function execute(interaction: BaseInteraction) {
+	const client = interaction.client as DiscordClient;
 
 	// Handling button commands, no idea how this was working -Sravdar
 	// Should be only working with buttons in interaction reply of slashcommand
-	if (interaction.isButton()) {
-		const command = interaction.client.buttonCommands.get(interaction.message.interaction.commandName);
+	if (interaction.isButton() && interaction.message.interaction) {
+		const command = client.buttonCommands.get(interaction.message.interaction.commandName);
 		if (!command) {
 			console.error(`No button command matching ${interaction.message.interaction.commandName} was found.`);
 			return;
@@ -34,10 +37,20 @@ async function execute(interaction) {
 	// return if it isn't a normal command.
 	if (!interaction.isCommand()) return;
 	// down below is normal command options
+	let interactionChannelName = 'Unknown Channel';
+	if (interaction.channel?.type == ChannelType.DM) {
+		interactionChannelName = `${interaction.channel.recipient?.username} DM Channel`;
+	} else if (interaction.channel) {
+		interactionChannelName = interaction.channel.name;
+	} else {
+		interactionChannelName = 'Unknown Channel';
+	}
+
+
 	if (interaction.isUserContextMenuCommand()) {
-		console.log(`${interaction.user.tag} in #${interaction.channel.name} triggered an user context menu interaction.`);
+		console.log(`${interaction.user.tag} in #${interactionChannelName} triggered an user context menu interaction.`);
 	} else if (interaction.inGuild()) {
-		console.log(`${interaction.user.tag} in #${interaction.channel.name} triggered an interaction.`);
+		console.log(`${interaction.user.tag} in #${interactionChannelName} triggered an interaction.`);
 	} else {
 		console.log(`${interaction.user.tag} in direct message channel triggered an interaction.`);
 	}

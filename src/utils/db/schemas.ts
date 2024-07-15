@@ -1,8 +1,9 @@
-const mongoose = require('mongoose');
+import mongoose, { ConnectOptions } from 'mongoose';
+import { mongodbConnectionURL } from '../../secret.json';
+import { BaseInteraction } from 'discord.js';
 
-const { mongodbConnectionURL } = require('../../secret.json');
 mongoose.set('strictQuery', true);
-mongoose.connect(mongodbConnectionURL, { useNewUrlParser: true, useUnifiedTopology: true });
+mongoose.connect(mongodbConnectionURL, { useNewUrlParser: true, useUnifiedTopology: true } as ConnectOptions);
 
 const quotesSchema = new mongoose.Schema({
 	quote: String,
@@ -13,7 +14,7 @@ const quotesSchema = new mongoose.Schema({
 	creatorID: String,
 });
 
-quotesSchema.methods.toString = async function(interaction) {
+quotesSchema.methods.asString = async function(interaction: BaseInteraction) {
 	let username = this.author;
 	try {
 		const authorUser = await interaction.client.users.fetch(this.authorID);
@@ -36,7 +37,7 @@ quotesSchema.methods.toString = async function(interaction) {
 	}
 };
 
-const Quote = mongoose.model('Quote', quotesSchema);
+export const Quote = mongoose.model('Quote', quotesSchema);
 
 module.exports = {
 	Quote,

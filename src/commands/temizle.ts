@@ -1,4 +1,4 @@
-import { ButtonInteraction, ChatInputCommandInteraction, SlashCommandBuilder, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageInteraction, InteractionReplyOptions, TextChannel, ChannelType } from 'discord.js';
+import { ButtonInteraction, ChatInputCommandInteraction, SlashCommandBuilder, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, InteractionReplyOptions, ChannelType } from 'discord.js';
 
 const row = new ActionRowBuilder()
 	.addComponents(

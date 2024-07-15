@@ -3,7 +3,6 @@
  */
 
 import { ChatInputCommandInteraction, GuildMember, SlashCommandBuilder } from 'discord.js';
-import { DiscordClient } from '../classes/discordClient';
 
 export async function execute(interaction: ChatInputCommandInteraction) {
 	const interactionOwner = interaction.member as GuildMember;
@@ -12,4 +11,4 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 export const data = new SlashCommandBuilder()
 	.setName('spotify')
 	.setDescription('Spotify\'da dinlediğiniz müziği gösterir. Bu müziği youtuba\'a ekleyebilirsiniz.')
-	.setDMPermission(false)
+	.setDMPermission(false);
