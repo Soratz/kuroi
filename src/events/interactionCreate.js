@@ -46,6 +46,7 @@ async function execute(interaction) {
 	if (!command) return;
 
 	try {
+		console.log(`${interaction.user.tag} triggered an a normal command interaction.`);
 		await command.execute(interaction);
 	} catch (error) {
 		console.error(error);

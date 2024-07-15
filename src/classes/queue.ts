@@ -17,6 +17,14 @@ export class Queue<T> {
 		return undefined;
 	}
 
+	last(): T | undefined {
+		const len = this.queue.length;
+		if (this.queue.length != 0) {
+			return this.queue[len - 1];
+		}
+		return undefined;
+	}
+
 	// returns the current length of the queue
 	enqueue(element: T): number {
 		if (this.queue.length != this.maxLength) {
