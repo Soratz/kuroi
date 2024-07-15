@@ -26,8 +26,7 @@
     "rebuild": "^0.1.2",
     "sodium-native": "^3.3.0",
     "ts-node": "^10.9.1",
-    "utf-8-validate": "^5.0.9",
-    "ytdl-core": "^4.11.5"
+    "utf-8-validate": "^5.0.9"
   },
   "devDependencies": {
     "@types/node-fetch": "^2.6.2",
