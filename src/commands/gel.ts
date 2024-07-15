@@ -1,18 +1,19 @@
-const { SlashCommandBuilder } = require('@discordjs/builders');
-const { joinVoiceChannel, VoiceConnectionStatus } = require('@discordjs/voice');
-const { createAudioPlayer, createAudioResource, NoSubscriberBehavior } = require('@discordjs/voice');
-const { connectionSafeDestroyer } = require('../utils/utils.js');
+import { SlashCommandBuilder } from '@discordjs/builders';
+import { joinVoiceChannel, VoiceConnectionStatus } from '@discordjs/voice';
+import { createAudioPlayer, createAudioResource, NoSubscriberBehavior } from '@discordjs/voice';
+import { connectionSafeDestroyer } from '../utils/utils.js';
+import { ChatInputCommandInteraction, GuildMember } from 'discord.js';
 
-const { join } = require('node:path');
+import { join } from 'node:path';
 
-async function execute(interaction) {
+async function execute(interaction: ChatInputCommandInteraction) {
 	if (interaction.inGuild()) {
-		const guildMember = interaction.member;
+		const guildMember = interaction.member as GuildMember;
 		const voiceState = guildMember.voice;
 		const voiceChannel = voiceState.channel;
 		const guild = guildMember.guild;
 		// const clientMember = guild.me;
-		if (voiceChannel.joinable) {
+		if (voiceChannel && voiceChannel.joinable) {
 			const connection = joinVoiceChannel({
 				channelId: voiceChannel.id,
 				guildId: guild.id,
@@ -24,7 +25,11 @@ async function execute(interaction) {
 
 			player.play(resource);
 			player.on('error', error => {
-				console.error(`Error: ${error.message} with resource ${error.resource.metadata.title}`);
+				let metaDataTitle = 'No resource';
+				if (error.resource.metadata && typeof error.resource.metadata === 'object' && 'title' in error.resource.metadata) {
+					metaDataTitle = (error.resource.metadata as any).title;
+				}
+				console.error(`Error: ${error.message} with resource ${metaDataTitle}`);
 				player.stop();
 			});
 

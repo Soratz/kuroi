@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+import { ButtonInteraction, ChatInputCommandInteraction, SlashCommandBuilder, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageInteraction, InteractionReplyOptions, TextChannel, ChannelType } from 'discord.js';
 
 const row = new ActionRowBuilder()
 	.addComponents(
@@ -15,26 +15,26 @@ const row = new ActionRowBuilder()
 	)
 ;
 
-async function execute(interaction) {
-	const deleteNumber = Math.floor(interaction.options.getNumber('sayı'));
+async function execute(interaction: ChatInputCommandInteraction) {
+	const deleteNumber = Math.floor(interaction.options.getNumber('sayı')!);
 	await interaction.reply({
 		content: `${interaction.user}, son yazılan **${deleteNumber}** mesajı silmek istediğine emin misin?`,
 		components: [row],
-	});
+	} as InteractionReplyOptions);
 }
 
-async function buttonExecute(interaction) {
+async function buttonExecute(interaction: ButtonInteraction) {
 	// Check if clicked by same person. First variable gets user from message context.
-	if (interaction.message.interaction.user.id != interaction.user.id) {
+	if (interaction.message.interaction && interaction.message.interaction.user.id != interaction.user.id) {
 		interaction.reply({ content: 'Bu sorgu sizin için değil!', ephemeral: true });
 		return;
 	}
 
 	await interaction.message.delete();
-	if (interaction.customId == 'delete') {
+	if (interaction.customId == 'delete' && interaction.channel?.type == ChannelType.GuildText) {
 		// Number is scooped from message by spliting bold (**) markers
 		const deleteNumber = interaction.message.content.split('**')[1];
-		await interaction.channel.bulkDelete(deleteNumber);
+		await interaction.channel.bulkDelete(Number.parseInt(deleteNumber));
 		console.log(`${interaction.user.tag} deleted ${deleteNumber} messages in channel #${interaction.channel.name}`);
 	}
 }

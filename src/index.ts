@@ -1,3 +1,5 @@
+// TODO: Without disabling this it thorws error. Fix this when you can.
+/* eslint-disable @typescript-eslint/no-var-requires */
 import { IntentsBitField } from 'discord.js';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
