@@ -6,6 +6,6 @@
 	"komutChannelId": "315050313427976199",
 	"servers": [{"id":"117353309467181058","defaultChannel":{"id":"117353309467181058"}}],
 	"settings": {
-		"maxQueueLength": 20
+		"maxQueueLength": 50
 	}
 }

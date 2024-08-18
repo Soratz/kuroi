@@ -1,7 +1,7 @@
 import type { Readable } from 'stream';
 import fluentFfmpeg from 'fluent-ffmpeg';
-import ytdl from 'ytdl-core';
-import type { Filter } from 'ytdl-core';
+import ytdl from '@distube/ytdl-core';
+import type { Filter } from '@distube/ytdl-core';
 import { YoutubeVideoData } from './youtubeSearch';
 import { Queue } from './queue';
 import { AudioPlayer, AudioPlayerStatus, createAudioPlayer, createAudioResource, entersState,
