@@ -1,5 +1,5 @@
 import { VoiceConnectionStatus, entersState, getVoiceConnection, VoiceConnectionState } from '@discordjs/voice';
-import { masterID } from '../config.json';
+import { masterIDs } from '../config.json';
 import { Guild } from 'discord.js';
 
 // TODO: Either migrate commented functions to typescript or remove them.
@@ -19,8 +19,8 @@ export function isPriveleged(userID: string) {
 	return priveleged;
 }
 
-export function isMaster(userID: string) {
-	return userID === masterID;
+export function isMaster(userID: string): boolean {
+	return masterIDs.includes(userID);
 }
 
 export async function connectionSafeDestroyer(oldState: VoiceConnectionState, newState: VoiceConnectionState) {
