@@ -1,7 +1,13 @@
 secret.json
 
+
 # hidden files
 .*
+
+# exclude from gitignore launch json for typescript debuging configurations
+!.vscode
+.vscode/*
+!.vscode/launch.json
 
 # do not ignore eslint files
 
