@@ -1,7 +1,8 @@
-const { SlashCommandBuilder } = require('@discordjs/builders');
-const { getVoiceConnection } = require('@discordjs/voice');
+import { SlashCommandBuilder } from '@discordjs/builders';
+import { getVoiceConnection } from '@discordjs/voice';
+import { ChatInputCommandInteraction } from 'discord.js';
 
-async function execute(interaction) {
+async function execute(interaction: ChatInputCommandInteraction) {
 	if (interaction.inGuild()) {
 		const connection = getVoiceConnection(interaction.guildId);
 		if (connection) {

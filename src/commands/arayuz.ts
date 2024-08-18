@@ -1,8 +1,10 @@
-const { SlashCommandBuilder } = require('@discordjs/builders');
-const { isMaster } = require('../utils/utils.js');
-const { inspect } = require('util');
+import { SlashCommandBuilder } from '@discordjs/builders';
+import { isMaster } from '../utils/utils.js';
+import { inspect } from 'util';
+import { ChatInputCommandInteraction } from 'discord.js';
 
-async function execute(interaction) {
+
+async function execute(interaction: ChatInputCommandInteraction) {
 	const creatorID = interaction.user.id;
 	await interaction.deferReply();
 
@@ -13,19 +15,21 @@ async function execute(interaction) {
 
 	try {
 		const command = interaction.options.getString('komut');
-		let evaled = eval(command);
+		let evaled = eval(command!);
 
 		if (typeof (evaled) !== 'string') {
 			evaled = inspect(evaled);
 		}
 		await interaction.editReply(`\`\`\`xl\n${await clean(evaled)}\n\`\`\``);
-	} catch (err) {
-		await interaction.editReply(`\`ERROR DESU\` \`\`\`xl\n${await clean(err)}\n\`\`\``);
+	} catch (err: unknown) {
+		if (err != null) {
+			await interaction.editReply(`\`ERROR DESU\` \`\`\`xl\n${await clean(String(err))}\n\`\`\``);
+		}
 	}
 	return;
 }
 
-async function clean(text) {
+async function clean(text: string) {
 	if (typeof (text) === 'string') {
 		return text.replace(/`/g, '`' + String.fromCharCode(8203)).replace(/@/g, '@' + String.fromCharCode(8203));
 	} else {

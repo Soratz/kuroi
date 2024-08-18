@@ -1,4 +1,4 @@
-import { ActivityOptions, ActivityType, Client, ClientOptions, Collection, PresenceData } from 'discord.js';
+import { ActivityType, Client, ClientOptions, Collection, PresenceData } from 'discord.js';
 import { DiscordAudioQueue } from './discordAudioQueue';
 
 export { DiscordClient };

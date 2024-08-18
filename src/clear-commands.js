@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 // Clears all commands imported to discord. Most used in test bots to clear duplicated commands after testing.
 
 const { REST } = require('@discordjs/rest');

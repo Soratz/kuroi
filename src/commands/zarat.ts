@@ -1,4 +1,5 @@
-const { SlashCommandBuilder } = require('@discordjs/builders');
+import { SlashCommandBuilder } from '@discordjs/builders';
+import { ChatInputCommandInteraction } from 'discord.js';
 
 // const nameLocalizations = {
 // 	'tr': 'zarat',
@@ -8,9 +9,9 @@ const { SlashCommandBuilder } = require('@discordjs/builders');
 // 	'tr': 'İstediğiniz sayıya sahip zarı atar.',
 // };
 
-async function execute(interaction) {
+async function execute(interaction: ChatInputCommandInteraction) {
 	const dieNumber = interaction.options.getInteger('sayı');
-	const randomNumber = Math.floor(Math.random() * dieNumber) + 1;
+	const randomNumber = Math.floor(Math.random() * dieNumber!) + 1;
 	await interaction.reply({ content: `Rolled **${randomNumber}** (1-${dieNumber})` });
 }
 

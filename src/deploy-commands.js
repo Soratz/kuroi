@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 // Require the necessary discord.js classes
 const fs = require('node:fs');
 const path = require('node:path');

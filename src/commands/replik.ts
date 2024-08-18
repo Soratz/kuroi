@@ -1,8 +1,15 @@
-const { SlashCommandBuilder } = require('@discordjs/builders');
-const { Quote } = require('../utils/db/schemas.js');
-const { isPriveleged } = require('../utils/utils.js');
+import { SlashCommandBuilder } from '@discordjs/builders';
+import { Quote } from '../utils/db/schemas.js';
+import { isPriveleged } from '../utils/utils.js';
+import { ChatInputCommandInteraction, User } from 'discord.js';
+// import { ObjectExpression } from 'mongoose';
 
-async function createQuote(quoteMessage, authorName, authorID, date, imageURL, creatorID) {
+interface QuoteObject {
+	authorID: string | RegExp;
+	quote: RegExp;
+  }
+
+async function createQuote(quoteMessage: string, authorName: string, authorID: string, date: Date, imageURL: string, creatorID: string) {
 	const quote = new Quote({
 		quote: quoteMessage,
 		author: authorName,
@@ -15,8 +22,8 @@ async function createQuote(quoteMessage, authorName, authorID, date, imageURL, c
 	await quote.save();
 }
 
-function generateQuery(context, quoteAuthorUser) {
-	const query = { 'authorID': /.*/, 'quote': /.*/ };
+function generateQuery(context: string | null, quoteAuthorUser: User | null) {
+	const query: QuoteObject = { 'authorID': /.*/, 'quote': /.*/ };
 	// any given context
 	if (context) {
 		query['quote'] = new RegExp(context, 'gmi');
@@ -28,7 +35,7 @@ function generateQuery(context, quoteAuthorUser) {
 	return query;
 }
 
-async function replyWithQuoteByQuery(interaction, query) {
+async function replyWithQuoteByQuery(interaction: ChatInputCommandInteraction, query: object) {
 	const count = await Quote.count(query);
 	if (count == 0) {
 		await interaction.editReply('Replik bulamadım sanırsam ya.');
@@ -43,11 +50,14 @@ async function replyWithQuoteByQuery(interaction, query) {
 		console.log('Query count: ', count);
 		return;
 	}
-	const quoteString = await quote.toString(interaction);
+	let quoteString = 'No Quote';
+	if ('asString' in quote && typeof quote['asString'] === 'function') {
+		quoteString = await quote.asString(interaction);
+	}
 	await interaction.editReply(quoteString);
 }
 
-async function execute(interaction) {
+async function execute(interaction: ChatInputCommandInteraction) {
 	if (interaction.options.getSubcommand() === 'bak') {
 		await interaction.deferReply();
 		const quoteAuthorUser = interaction.options.getUser('kullanıcı');
@@ -62,12 +72,12 @@ async function execute(interaction) {
 			return;
 		}
 
-		const quoteMessage = interaction.options.getString('replik');
+		const quoteMessage = interaction.options.getString('replik') ?? 'null string';
 		const authorUser = interaction.options.getUser('kullanıcı');
-		const imageURL = interaction.options.getString('görsel');
+		const imageURL = interaction.options.getString('görsel') ?? '';
 		const date = interaction.createdAt;
-		const authorName = authorUser.username;
-		const authorID = authorUser.id;
+		const authorName = authorUser!.username;
+		const authorID = authorUser!.id;
 
 		await createQuote(quoteMessage, authorName, authorID, date, imageURL, creatorID);
 		await interaction.editReply('Replik eklendi.');
