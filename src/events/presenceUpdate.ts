@@ -7,7 +7,7 @@ import { Activity, BaseGuildTextChannel, Guild, Presence, TextChannel, User } fr
 import { Spotify } from '../classes/spotifyPresence';
 import { Events, EmbedBuilder } from 'discord.js';
 import { spotifyThreadId, gameThreadId, komutChannelId, selfrID } from '../config.json';
-import { isTestBot } from '../secret.json';
+import { isTestBot } from '../config.json';
 import { getSpotifyObject } from '../classes/spotifyPresence';
 
 let lastSpotifyUsername: string, lastSpotifyName: string, lastGameUsername: string, lastGameName: string;

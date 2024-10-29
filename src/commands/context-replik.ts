@@ -1,4 +1,4 @@
-import { ContextMenuCommandBuilder } from '@discordjs/builders';
+import { ContextMenuCommandBuilder, ContextMenuCommandType } from '@discordjs/builders';
 import { ApplicationCommandType, UserContextMenuCommandInteraction } from 'discord.js';
 import { DiscordClient } from '../classes/discordClient';
 
@@ -14,6 +14,6 @@ module.exports = {
 	data: new ContextMenuCommandBuilder()
 		.setName('Replik')
 		.setDMPermission(false)
-		.setType(ApplicationCommandType.User),
+		.setType(ApplicationCommandType.User as ContextMenuCommandType),
 	execute: execute,
 };
