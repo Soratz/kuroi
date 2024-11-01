@@ -3,7 +3,7 @@ Compare old and new presence to see change in activity
 Mainly used for finding if there is newGame or newSong started to play
 It's all posted in the Selfr -> #komut -> SpotifyLog & GameLog threads
 */
-import { Activity, BaseGuildTextChannel, Guild, Presence, TextChannel, User } from 'discord.js';
+import { Activity, BaseGuildTextChannel, Guild, Presence, TextChannel, TextThreadChannel, User } from 'discord.js';
 import { Spotify } from '../classes/spotifyPresence';
 import { Events, EmbedBuilder } from 'discord.js';
 import { spotifyThreadId, gameThreadId, komutChannelId, selfrID } from '../config.json';
@@ -49,21 +49,18 @@ async function SpotifyLogger(oldPresence: Presence, newPresence: Presence, prese
 			lastSpotifyUsername = presenceOwner.username;
 			lastSpotifyName = newSong.songName;
 
-			let usersGuild: Guild | undefined;
-			if (oldPresence.client.guilds.cache.get(selfrID) != undefined) {
-				usersGuild = oldPresence.client.guilds.cache.get(selfrID) as Guild;
+			let spotifyWriteThread: TextThreadChannel | null = null;
+			const usersGuild = await oldPresence.client.guilds.fetch(selfrID);
+			if (usersGuild) {
+				const spotifyWriteChannel = await usersGuild.channels.fetch(komutChannelId) as TextChannel;
+				if (spotifyWriteChannel) {
+					spotifyWriteThread = await spotifyWriteChannel.threads.fetch(spotifyThreadId);
+				}
 			}
 
-			let spotifyWriteChannel: TextChannel;
-			if ((usersGuild as Guild).channels.cache.get(komutChannelId) != undefined) {
-				spotifyWriteChannel = (usersGuild as Guild).channels.cache.get(komutChannelId) as TextChannel;
+			if (spotifyWriteThread == null) {
+				return;
 			}
-
-			let spotifyWriteThread: any;
-			if ((spotifyWriteThread as TextChannel).threads.cache.get(spotifyThreadId) != undefined) {
-				spotifyWriteThread = (spotifyWriteThread as TextChannel).threads.cache.get(spotifyThreadId);
-			}
-
 
 			// Search the song using spotify default url build for searches. '%20' instead of blank spots.
 			const spofiySearchLink = (newSong.songName + '%20' + newSong.artistName).replace(/\/|\\/g, '').split(' ').join('%20');
