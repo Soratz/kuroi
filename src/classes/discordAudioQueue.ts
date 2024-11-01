@@ -1,14 +1,22 @@
 import type { Readable } from 'stream';
 import fluentFfmpeg from 'fluent-ffmpeg';
-import ytdl from '@distube/ytdl-core';
-import type { Filter } from '@distube/ytdl-core';
+import { YtdlCore, toPipeableStream, YTDL_Filter } from '@ybd-project/ytdl-core';
 import { YoutubeVideoData } from './youtubeSearch';
 import { Queue } from './queue';
 import { AudioPlayer, AudioPlayerStatus, createAudioPlayer, createAudioResource, entersState,
 	getVoiceConnection, joinVoiceChannel, PlayerSubscription, VoiceConnectionStatus } from '@discordjs/voice';
 import { ActivityType, Guild, GuildMember, Interaction } from 'discord.js';
 import { settings } from '../config.json';
+import { youtubeOAuth2Client } from '../secret.json';
 import { DiscordClient } from './discordClient';
+
+const ytdl = new YtdlCore({
+	oauth2Credentials: {
+		accessToken: youtubeOAuth2Client.access_token,
+		refreshToken: youtubeOAuth2Client.refresh_token,
+		expiryDate: '3000',
+	},
+});
 
 // So queue for songs, all songs must be inside this queue.
 // Currently playing song must be at the beginning of the queue.
@@ -36,7 +44,7 @@ export class DiscordAudioQueue extends Queue<YoutubeVideoData> {
 	}
 
 	// seek is in milliseconds
-	play(interaction: Interaction, seek = 0): PlayerSubscription | undefined {
+	async play(interaction: Interaction, seek = 0): Promise<PlayerSubscription | undefined> {
 		const voiceConnection = this.createOrGetVoiceConnection(interaction);
 		if (voiceConnection) {
 			const currentAudioData: YoutubeVideoData | undefined = this.peek();
@@ -48,7 +56,7 @@ export class DiscordAudioQueue extends Queue<YoutubeVideoData> {
 				(this.interaction.client as DiscordClient).audioQueues.delete(this.guildId);
 				return undefined;
 			}
-			let stream: Readable | any = this.createStream(currentAudioData);
+			let stream: Readable | any = await this.createStream(currentAudioData);
 			if (seek > 0) {
 				// seeks to current song (i.e. song at the beginning of the queue) to the given time point as ms.
 				stream = fluentFfmpeg({ source: stream }).toFormat('mp3').setStartTime(Math.ceil(seek / 1000));
@@ -91,7 +99,7 @@ export class DiscordAudioQueue extends Queue<YoutubeVideoData> {
 				this.stop();
 				(this.interaction.client as DiscordClient).setActivity('', undefined);
 			} else {
-				this.play(this.interaction);
+				await this.play(this.interaction);
 			}
 		});
 		audioPlayer.on(AudioPlayerStatus.AutoPaused, () => {
@@ -165,17 +173,8 @@ export class DiscordAudioQueue extends Queue<YoutubeVideoData> {
 		return undefined;
 	}
 
-	private createStream(videoData: YoutubeVideoData) {
-		const filter: Filter = 'audioonly';
-		const ytdl_options = {
-			filter: filter,
-			fmt: 'mp3',
-			highWaterMark: 1 << 62,
-			liveBuffer: 1 << 62,
-			// disabling chunking is recommended in discord bot
-			dlChunkSize: 0,
-			bitrate: 128,
-		};
-		return ytdl(videoData.videoURL, ytdl_options);
+	private async createStream(videoData: YoutubeVideoData): Promise<Readable> {
+		const stream = toPipeableStream(await ytdl.download(videoData.videoURL));
+		return stream;
 	}
 }

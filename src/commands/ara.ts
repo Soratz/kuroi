@@ -94,7 +94,7 @@ export async function selectSong(interaction: StringSelectMenuInteraction) {
 	const lastVideo = queue.last() as YoutubeVideoData;
 	// if queue was empty before adding a song, play it
 	if (wasQueueEmpty) {
-		const subscription = queue.play(interaction);
+		const subscription = await queue.play(interaction);
 		if (!subscription) {
 			await interaction.followUp({ content: 'Şu an bir şeyler dinlemeyelim en iyisi.', embeds: [], components: [], ephemeral: true });
 			// remove the last song we added

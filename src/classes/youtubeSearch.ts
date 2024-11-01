@@ -1,9 +1,17 @@
 import { APISelectMenuOption, Collection } from 'discord.js';
 import fetch from 'node-fetch';
-import ytdl from '@distube/ytdl-core';
-import { youtubeApiKey } from '../secret.json';
+import { YtdlCore, YTDL_VideoInfo, YT_StreamingAdaptiveFormat } from '@ybd-project/ytdl-core';
+import { youtubeApiKey, youtubeOAuth2Client } from '../secret.json';
 const youtubeQueryURL = 'https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=10&regionCode=GB&type=video,playlist&q=${queryString}&key=${youtubeApiKey}';
 const playlistItemsUrl = 'https://youtube.googleapis.com/youtube/v3/playlistItems?part=contentDetails,snippet&playlistId=${playlistId}&maxResults=50&key=${youtubeApiKey}';
+
+const ytdl = new YtdlCore({
+	oauth2Credentials: {
+		accessToken: youtubeOAuth2Client.access_token,
+		refreshToken: youtubeOAuth2Client.refresh_token,
+		expiryDate: '3000',
+	},
+});
 
 export enum YoutubeSearchType {
 	Video = 'youtube#video',
@@ -72,14 +80,14 @@ export class YoutubeSearchData {
 // Todo: might add extra options if necessary
 export class YoutubeVideoData extends YoutubeSearchData {
 	readonly videoURL: string;
-	private ytdlInfo?: ytdl.videoInfo;
+	private ytdlInfo?: YTDL_VideoInfo<YT_StreamingAdaptiveFormat>;
 	constructor(title: string, channelTitleDesc: string, videoId: string) {
 		super(title, channelTitleDesc, videoId, YoutubeSearchType.Video);
 		this.videoURL = 'https://www.youtube.com/watch?v=' + this.id;
 	}
 
 	async getInfo() {
-		if (!this.ytdlInfo) this.ytdlInfo = await ytdl.getInfo(this.videoURL);
+		if (!this.ytdlInfo) this.ytdlInfo = await ytdl.getBasicInfo(this.videoURL);
 		return this.ytdlInfo;
 	}
 }

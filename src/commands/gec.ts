@@ -22,7 +22,7 @@ async function execute(interaction: ChatInputCommandInteraction) {
 		const nextSong = queue.peek();
 		if (nextSong) {
 			const songName = nextSong.title;
-			queue.play(interaction);
+			await queue.play(interaction);
 			await interaction.reply(`Tamamdır, sıradaki şarkımız: \`\`${songName}\`\``);
 			return;
 		} else {

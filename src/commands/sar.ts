@@ -21,7 +21,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 		const client = interaction.client as DiscordClient;
 		const queue = client.audioQueues.get(interaction.guildId as string);
 		if (queue && !queue.isEmpty()) {
-			queue.play(interaction, seconds * 1000);
+			await queue.play(interaction, seconds * 1000);
 		}
 		await interaction.reply({ content: `:fast_forward: Şarkı ${timeString} noktasına sarıldı.`, ephemeral: false });
 	} else {
