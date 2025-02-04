@@ -102,7 +102,7 @@ export async function selectSong(interaction: StringSelectMenuInteraction) {
 		}
 		const embed = new EmbedBuilder().setColor(0xFC1C03);
 		const member = interaction.member as GuildMember;
-		const videoInfo = await lastVideo.getInfo();
+		const videoInfo = await lastVideo.getInfo(client.cookies);
 		embed.setTitle(lastVideo.title)
 			.setAuthor({ name: member.displayName, iconURL: member.displayAvatarURL({ format: 'png' } as ImageURLOptions) })
 			.setURL(lastVideo.videoURL)
@@ -114,7 +114,7 @@ export async function selectSong(interaction: StringSelectMenuInteraction) {
 		// TODO: change this print if playlist was added
 		const embed = new EmbedBuilder().setColor(0xFC1C03);
 		const member = interaction.member as GuildMember;
-		const videoInfo = await lastVideo.getInfo();
+		const videoInfo = await lastVideo.getInfo(client.cookies);
 		embed.setTitle(`Video ${queue.getLength()}. sıraya eklendi.`)
 			.setAuthor({ name: member.displayName, iconURL: member.displayAvatarURL({ format: 'png' } as ImageURLOptions) })
 			.setURL(lastVideo.videoURL)

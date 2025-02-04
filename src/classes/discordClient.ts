@@ -1,5 +1,7 @@
 import { ActivityType, Client, ClientOptions, Collection, PresenceData } from 'discord.js';
 import { DiscordAudioQueue } from './discordAudioQueue';
+import { readFileSync } from 'fs';
+import { Cookie } from '@distube/ytdl-core';
 
 export { DiscordClient };
 
@@ -12,6 +14,7 @@ class DiscordClient extends Client {
 	buttonCommands: Collection<string, any>;
 	// A collection of discord audio queues for each server.
 	audioQueues: Collection<string, DiscordAudioQueue>;
+	cookies: Cookie[];
 
 	constructor(options: ClientOptions) {
 		super(options);
@@ -19,6 +22,17 @@ class DiscordClient extends Client {
 		this.contextMenuCommands = new Collection();
 		this.buttonCommands = new Collection();
 		this.audioQueues = new Collection();
+		this.cookies = this.loadCookies();
+	}
+
+	private loadCookies(): Cookie[] {
+		try {
+			const cookies = JSON.parse(readFileSync('src/yt-cookies.json', 'utf8'));
+			return cookies;
+		} catch (error) {
+			console.warn('Failed to load YouTube cookies:', error);
+			return [];
+		}
 	}
 
 	setPresence(data: PresenceData) {

@@ -9,6 +9,7 @@ import { AudioPlayer, AudioPlayerStatus, createAudioPlayer, createAudioResource,
 import { ActivityType, Guild, GuildMember, Interaction } from 'discord.js';
 import { settings } from '../config.json';
 import { DiscordClient } from './discordClient';
+import { readFileSync } from 'fs';
 
 // So queue for songs, all songs must be inside this queue.
 // Currently playing song must be at the beginning of the queue.
@@ -167,6 +168,8 @@ export class DiscordAudioQueue extends Queue<YoutubeVideoData> {
 
 	private createStream(videoData: YoutubeVideoData) {
 		const filter: Filter = 'audioonly';
+		const cookies = JSON.parse(readFileSync('src/yt-cookies.json', 'utf8'));
+		const agent = ytdl.createAgent(cookies);
 		const ytdl_options = {
 			filter: filter,
 			fmt: 'mp3',
@@ -175,6 +178,7 @@ export class DiscordAudioQueue extends Queue<YoutubeVideoData> {
 			// disabling chunking is recommended in discord bot
 			dlChunkSize: 0,
 			bitrate: 128,
+			agent: agent,
 		};
 		return ytdl(videoData.videoURL, ytdl_options);
 	}
