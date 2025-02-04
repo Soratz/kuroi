@@ -1,6 +1,6 @@
 import { APISelectMenuOption, Collection } from 'discord.js';
 import fetch from 'node-fetch';
-import ytdl from '@distube/ytdl-core';
+import ytdl, { Cookie } from '@distube/ytdl-core';
 import { youtubeApiKey } from '../secret.json';
 const youtubeQueryURL = 'https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=10&regionCode=GB&type=video,playlist&q=${queryString}&key=${youtubeApiKey}';
 const playlistItemsUrl = 'https://youtube.googleapis.com/youtube/v3/playlistItems?part=contentDetails,snippet&playlistId=${playlistId}&maxResults=50&key=${youtubeApiKey}';
@@ -78,8 +78,8 @@ export class YoutubeVideoData extends YoutubeSearchData {
 		this.videoURL = 'https://www.youtube.com/watch?v=' + this.id;
 	}
 
-	async getInfo() {
-		if (!this.ytdlInfo) this.ytdlInfo = await ytdl.getInfo(this.videoURL);
+	async getInfo(cookies: Cookie[]) {
+		if (!this.ytdlInfo) this.ytdlInfo = await ytdl.getInfo(this.videoURL, { agent: ytdl.createAgent(cookies) });
 		return this.ytdlInfo;
 	}
 }
