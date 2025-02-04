@@ -8,7 +8,7 @@ async function execute(interaction: BaseInteraction) {
 	if (interaction.channel?.type == ChannelType.DM) {
 		interactionChannelName = 'DM Channel';
 	} else if (interaction.channel) {
-		interactionChannelName = interaction.channel.name;
+		interactionChannelName = interaction.channel.name!;
 	} else {
 		interactionChannelName = 'Unknown Channel';
 	}

@@ -5,6 +5,7 @@
 	"gameThreadId": "1046778164292108329",
 	"komutChannelId": "315050313427976199",
 	"servers": [{"id":"117353309467181058","defaultChannel":{"id":"117353309467181058"}}],
+	"isTestBot": false,
 	"settings": {
 		"maxQueueLength": 50
 	}

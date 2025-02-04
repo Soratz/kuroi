@@ -11,8 +11,8 @@ class Spotify {
 export function getSpotifyObject(userPresence:Presence): Spotify {
 	const spotifyObj: Spotify = new Spotify;
 
-	const spotifyActivity: Activity = userPresence.activities.find(obj => obj.type === 2) as Activity ?? null;
-	if (spotifyActivity.name !== 'Spotify') {
+	const spotifyActivity: Activity | null = userPresence.activities.find(obj => obj.type === 2) as Activity ?? null;
+	if (spotifyActivity == null || spotifyActivity.name !== 'Spotify') {
 		return spotifyObj;
 	}
 
