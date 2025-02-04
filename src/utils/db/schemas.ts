@@ -3,7 +3,13 @@ import { mongodbConnectionURL } from '../../secret.json';
 import { BaseInteraction } from 'discord.js';
 
 mongoose.set('strictQuery', true);
-mongoose.connect(mongodbConnectionURL, { useNewUrlParser: true, useUnifiedTopology: true } as ConnectOptions);
+mongoose.connect(mongodbConnectionURL, { useNewUrlParser: true, useUnifiedTopology: true } as ConnectOptions)
+	.then(() => {
+		console.log('Successfully connected to MongoDB');
+	})
+	.catch(error => {
+		console.error('Failed to connect to MongoDB:', error);
+	});
 
 const quotesSchema = new mongoose.Schema({
 	quote: String,
