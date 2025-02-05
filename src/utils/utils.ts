@@ -46,7 +46,7 @@ export async function connectionSafeDestroyer(oldState: VoiceConnectionState, ne
 		// Seems to be reconnecting to a new channel - ignore disconnect
 	} catch (error) {
 		// Seems to be a real disconnect which SHOULDN'T be recovered from
-		console.log('Connection is destroyed due to some problems.');
+		console.log('Connection is destroyed due to some problems. Error:', error);
 		connection.destroy();
 	}
 }

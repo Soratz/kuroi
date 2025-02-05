@@ -71,7 +71,7 @@ export async function selectSong(interaction: StringSelectMenuInteraction) {
 	// get queue if exists or create a queue
 	let queue = client.audioQueues.get(interaction.guildId as string);
 	if (!queue) {
-		queue = new DiscordAudioQueue(interaction);
+		queue = new DiscordAudioQueue(interaction, client);
 		client.audioQueues.set(interaction.guildId as string, queue);
 	}
 	const wasQueueEmpty = queue.isEmpty();

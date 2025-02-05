@@ -4,9 +4,9 @@ import ytdl from '@distube/ytdl-core';
 import type { Filter } from '@distube/ytdl-core';
 import { YoutubeVideoData } from './youtubeSearch';
 import { Queue } from './queue';
-import { AudioPlayer, AudioPlayerStatus, createAudioPlayer, createAudioResource, entersState,
-	getVoiceConnection, joinVoiceChannel, PlayerSubscription, VoiceConnectionStatus } from '@discordjs/voice';
-import { ActivityType, Guild, GuildMember, Interaction } from 'discord.js';
+import { AudioPlayer, AudioPlayerStatus, createAudioPlayer, createAudioResource,
+	getVoiceConnection, PlayerSubscription } from '@discordjs/voice';
+import { ActivityType, GuildMember, Interaction, VoiceChannel } from 'discord.js';
 import { settings } from '../config.json';
 import { DiscordClient } from './discordClient';
 import { readFileSync } from 'fs';
@@ -15,13 +15,15 @@ import { readFileSync } from 'fs';
 // Currently playing song must be at the beginning of the queue.
 export class DiscordAudioQueue extends Queue<YoutubeVideoData> {
 	audioPlayer: AudioPlayer;
+	client: DiscordClient;
 	guildId: string;
 	interaction: Interaction;
 	loopEnabled: boolean;
-	constructor(interaction: Interaction, maxLength: number = settings.maxQueueLength) {
+	constructor(interaction: Interaction, client: DiscordClient, maxLength: number = settings.maxQueueLength) {
 		super(maxLength);
 		// interaction that created this queue
 		this.interaction = interaction;
+		this.client = client;
 		// guildId can't be null because this queue should only be called from a guild
 		if (!interaction.inGuild()) throw Error('DiscordAudioQueue must be intialized by an in-guild interaction.');
 		this.guildId = interaction.guildId as string;
@@ -38,15 +40,24 @@ export class DiscordAudioQueue extends Queue<YoutubeVideoData> {
 
 	// seek is in milliseconds
 	play(interaction: Interaction, seek = 0): PlayerSubscription | undefined {
-		const voiceConnection = this.createOrGetVoiceConnection(interaction);
+		const guildMember = interaction.member as GuildMember;
+		if (!guildMember || !guildMember.voice.channel) {
+			console.log('No voice channel found for guild member:', guildMember?.user.username);
+			return undefined;
+		}
+		const voiceConnection = this.client.createOrGetVoiceConnection(guildMember.voice.channel as VoiceChannel);
+		// Setting the last interaction to the property
+		this.interaction = interaction;
+
 		if (voiceConnection) {
+
 			const currentAudioData: YoutubeVideoData | undefined = this.peek();
 			if (currentAudioData == undefined) {
 				console.log('No audio to seek.');
 				// destroy connection here
 				voiceConnection.destroy();
 				this.audioPlayer.stop();
-				(this.interaction.client as DiscordClient).audioQueues.delete(this.guildId);
+				this.client.audioQueues.delete(this.guildId);
 				return undefined;
 			}
 			let stream: Readable | any = this.createStream(currentAudioData);
@@ -81,8 +92,9 @@ export class DiscordAudioQueue extends Queue<YoutubeVideoData> {
 		audioPlayer.on(AudioPlayerStatus.Playing, () => {
 			console.log('The audio player has started playing at %s! Status: %s', this.guildId, audioPlayer.state.status);
 			// TODO: This activity thing will be weird when bot is used in more than one server.
-			(this.interaction.client as DiscordClient).setActivity(this.peek()?.title, ActivityType.Listening);
+			this.client.setActivity(this.peek()?.title, ActivityType.Listening);
 		});
+
 		audioPlayer.on(AudioPlayerStatus.Idle, async () => {
 			console.log('The audio player is now idle at %s. Status: %s', this.guildId, audioPlayer.state.status);
 			// Queue is empty so remove the queue and destroy the connection
@@ -90,7 +102,7 @@ export class DiscordAudioQueue extends Queue<YoutubeVideoData> {
 			if (!this.loopEnabled) this.dequeue();
 			if (this.isEmpty()) {
 				this.stop();
-				(this.interaction.client as DiscordClient).setActivity('', undefined);
+				this.client.setPresence({ activities: [], status: 'online' });
 			} else {
 				this.play(this.interaction);
 			}
@@ -101,8 +113,9 @@ export class DiscordAudioQueue extends Queue<YoutubeVideoData> {
 			console.log('The audio player is now autopaused at %s. Status: %s', this.guildId, audioPlayer.state.status);
 			const currentConnection = getVoiceConnection(this.guildId);
 			// Destroy the connection
+			// TODO: this is a little bit problematic with follow option
 			if (currentConnection) currentConnection.destroy();
-			(this.interaction.client as DiscordClient).setActivity('', undefined);
+			this.client.setPresence({ activities: [], status: 'online' });
 		});
 		audioPlayer.on(AudioPlayerStatus.Paused, () => {
 			// No need to empty the queue when manually paused.
@@ -113,57 +126,6 @@ export class DiscordAudioQueue extends Queue<YoutubeVideoData> {
 			console.log('The audio player is now buffering at %s. Status: %s', this.guildId, audioPlayer.state.status);
 		});
 		return audioPlayer;
-	}
-
-	// Creates or gets the already existing voice connection.
-	// Todo: voice channel might be changed in the guild, there should be a control for that
-	private createOrGetVoiceConnection(interaction: Interaction) {
-		const prevConnection = getVoiceConnection(this.guildId);
-		if (prevConnection) return prevConnection;
-		// check if voice channel is joinable
-		const guildMember = interaction.member as GuildMember;
-		const voiceChannel = guildMember.voice.channel;
-		if (voiceChannel && voiceChannel.joinable) {
-			const connection = joinVoiceChannel({
-				channelId: voiceChannel.id,
-				guildId: this.guildId,
-				adapterCreator: (interaction.guild as Guild).voiceAdapterCreator,
-			});
-			// TODO: temporary fix for kuroi
-			connection.on('stateChange', (oldState, newState) => {
-				const oldNetworking = Reflect.get(oldState, 'networking');
-				const newNetworking = Reflect.get(newState, 'networking');
-
-				const networkStateChangeHandler = (oldNetworkState: any, newNetworkState: any) => {
-					const newUdp = Reflect.get(newNetworkState, 'udp');
-					clearInterval(newUdp?.keepAliveInterval);
-				};
-
-				oldNetworking?.off('stateChange', networkStateChangeHandler);
-				newNetworking?.on('stateChange', networkStateChangeHandler);
-			});
-			connection.on(VoiceConnectionStatus.Disconnected, async (oldState, newState) => {
-				try {
-					await Promise.race([
-						entersState(connection, VoiceConnectionStatus.Signalling, 5_000),
-						entersState(connection, VoiceConnectionStatus.Connecting, 5_000),
-					]);
-					// Seems to be reconnecting to a new channel - ignore disconnect
-				} catch (error) {
-					// Seems to be a real disconnect which SHOULDN'T be recovered from
-					console.log('Connection is destroyed due to some problems.');
-					if (connection.state.status != VoiceConnectionStatus.Destroyed) {
-						connection.destroy();
-					}
-					// empty the queue if connection got destroyed somehow
-					this.empty();
-				}
-			});
-			// Setting the last interaction to the property if a new connection is created
-			this.interaction = interaction;
-			return connection;
-		}
-		return undefined;
 	}
 
 	private createStream(videoData: YoutubeVideoData) {
