@@ -130,7 +130,7 @@ export class DiscordAudioQueue extends Queue<YoutubeVideoData> {
 
 	private createStream(videoData: YoutubeVideoData) {
 		const filter: Filter = 'audioonly';
-		const cookies = JSON.parse(readFileSync('src/yt-cookies.json', 'utf8'));
+		const cookies = this.client.cookies;
 		const agent = ytdl.createAgent(cookies);
 		const ytdl_options = {
 			filter: filter,

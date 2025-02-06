@@ -1,5 +1,4 @@
 import { VoiceState } from 'discord.js';
-import { DiscordClient } from '../classes/discordClient';
 import { followCreator } from './voiceStateUpdate/followCreator';
 
 
