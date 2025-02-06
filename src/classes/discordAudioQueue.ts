@@ -9,7 +9,6 @@ import { AudioPlayer, AudioPlayerStatus, createAudioPlayer, createAudioResource,
 import { ActivityType, GuildMember, Interaction, VoiceChannel } from 'discord.js';
 import { settings } from '../config.json';
 import { DiscordClient } from './discordClient';
-import { readFileSync } from 'fs';
 
 // So queue for songs, all songs must be inside this queue.
 // Currently playing song must be at the beginning of the queue.

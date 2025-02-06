@@ -44,11 +44,10 @@ class DiscordClient extends Client {
 	}
 
 	// Creates or gets the already existing voice connection.
-	// Todo: voice channel might be changed in the guild, there should be a control for that
 	createOrGetVoiceConnection(voiceChannel: VoiceChannel | undefined) {
 		if (!voiceChannel) return undefined;
 		const prevConnection = getVoiceConnection(voiceChannel.guild.id);
-		if (prevConnection) {
+		if (prevConnection && prevConnection.state.status != VoiceConnectionStatus.Destroyed) {
 			console.log('Voice connection already exists for guild:', voiceChannel.guild.id);
 			return prevConnection;
 		}
@@ -58,7 +57,7 @@ class DiscordClient extends Client {
 				channelId: voiceChannel.id,
 				guildId: voiceChannel.guild.id,
 				adapterCreator: voiceChannel.guild.voiceAdapterCreator,
-
+				selfDeaf: false,
 			});
 			connection.on('stateChange', (oldState, newState) => {
 				const oldNetworking = Reflect.get(oldState, 'networking');
