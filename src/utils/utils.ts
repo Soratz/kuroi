@@ -8,6 +8,13 @@ import { Guild } from 'discord.js';
 // TODO: this ids belongs to a config file but currently WIP
 const privilegedUserIDs = ['115464605676863492'];
 
+export function overrideConsoleLog() {
+	const originalConsoleLog = console.log;
+	console.log = (...args: any[]) => {
+		originalConsoleLog(`[${Date.now()}]`, ...args);
+	};
+}
+
 export function isPriveleged(userID: string) {
 	const priveleged = privilegedUserIDs.some(PID => {
 		if (PID === userID) {

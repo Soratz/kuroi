@@ -1,9 +1,9 @@
-import { ActivityType, Client, ClientOptions, Collection, Guild, GuildMember, PresenceData, VoiceChannel } from 'discord.js';
+import { ActivityType, Client, ClientOptions, Collection, PresenceData, VoiceChannel } from 'discord.js';
 import { DiscordAudioQueue } from './discordAudioQueue';
 import { existsSync, readFileSync } from 'fs';
 import { Cookie } from '@distube/ytdl-core';
 import { decodeHtmlEntities } from '../utils/string_utils';
-import { AudioPlayer, AudioPlayerStatus, createAudioResource, entersState, getVoiceConnection, joinVoiceChannel, VoiceConnectionStatus } from '@discordjs/voice';
+import { AudioPlayer, createAudioResource, entersState, getVoiceConnection, joinVoiceChannel, VoiceConnection, VoiceConnectionStatus } from '@discordjs/voice';
 import { createAudioPlayer } from '@discordjs/voice';
 import * as path from 'path';
 
@@ -47,7 +47,7 @@ class DiscordClient extends Client {
 	createOrGetVoiceConnection(voiceChannel: VoiceChannel | undefined) {
 		if (!voiceChannel) return undefined;
 		const prevConnection = getVoiceConnection(voiceChannel.guild.id);
-		if (prevConnection && prevConnection.state.status != VoiceConnectionStatus.Destroyed) {
+		if (prevConnection && prevConnection.state.status != VoiceConnectionStatus.Destroyed && prevConnection.joinConfig.channelId == voiceChannel.id) {
 			console.log('Voice connection already exists for guild:', voiceChannel.guild.id);
 			return prevConnection;
 		}
