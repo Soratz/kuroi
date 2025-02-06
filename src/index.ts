@@ -6,15 +6,13 @@ import * as path from 'node:path';
 import { secret } from './secret.json';
 import { generateDependencyReport } from '@discordjs/voice';
 import { DiscordClient } from './classes/discordClient';
-import { overrideConsoleLog } from './utils/utils';
+import 'log-timestamp';
 
 console.log(generateDependencyReport());
 
-// Override console.log
-overrideConsoleLog();
-
 // Create client intents
 const intents = new IntentsBitField();
+
 
 intents.add(
 	IntentsBitField.Flags.GuildPresences,
