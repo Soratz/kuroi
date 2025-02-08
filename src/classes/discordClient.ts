@@ -19,6 +19,7 @@ class DiscordClient extends Client {
 	// A collection of discord audio queues for each server.
 	audioQueues: Collection<string, DiscordAudioQueue>;
 	fileAudioPlayers: Collection<string, AudioPlayer>;
+	weakConnections: WeakSet<VoiceConnection>;
 	cookies: Cookie[];
 	follow: boolean;
 
@@ -29,6 +30,7 @@ class DiscordClient extends Client {
 		this.buttonCommands = new Collection();
 		this.audioQueues = new Collection();
 		this.fileAudioPlayers = new Collection();
+		this.weakConnections = new WeakSet<VoiceConnection>();
 		this.cookies = this.loadCookies();
 		this.follow = true;
 	}
@@ -59,6 +61,9 @@ class DiscordClient extends Client {
 				adapterCreator: voiceChannel.guild.voiceAdapterCreator,
 				selfDeaf: false,
 			});
+			// if connection is already in the weak set, return it
+			// this is to prevent adding multiple listeners on the same connection
+			if (this.weakConnections.has(connection)) return connection;
 			connection.on('stateChange', (oldState, newState) => {
 				const oldNetworking = Reflect.get(oldState, 'networking');
 				const newNetworking = Reflect.get(newState, 'networking');
@@ -88,6 +93,7 @@ class DiscordClient extends Client {
 					this.audioQueues.get(voiceChannel.guild.id)?.empty();
 				}
 			});
+			this.weakConnections.add(connection);
 			return connection;
 		}
 		return undefined;
@@ -113,9 +119,11 @@ class DiscordClient extends Client {
 		const voiceConnection = this.createOrGetVoiceConnection(voiceChannel);
 		if (voiceConnection) {
 			voiceConnection.subscribe(player);
+			return voiceConnection;
 		} else {
 			console.log('No voice connection found for voice channel:', voiceChannel.id);
 			player.stop(true);
+			return undefined;
 		}
 	}
 
