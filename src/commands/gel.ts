@@ -1,7 +1,4 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
-import { joinVoiceChannel, VoiceConnectionStatus } from '@discordjs/voice';
-import { createAudioPlayer, createAudioResource } from '@discordjs/voice';
-import { connectionSafeDestroyer } from '../utils/utils.js';
 import { ChatInputCommandInteraction, GuildMember, VoiceChannel } from 'discord.js';
 
 import { join } from 'node:path';
@@ -13,8 +10,6 @@ async function execute(interaction: ChatInputCommandInteraction) {
 		const guildMember = interaction.member as GuildMember;
 		const voiceState = guildMember.voice;
 		const voiceChannel = voiceState.channel;
-		const guild = guildMember.guild;
-		// const clientMember = guild.me;
 		if (voiceChannel && voiceChannel.joinable) {
 			client.playAudioFile(voiceChannel as VoiceChannel, 'hai.mp3');
 			await interaction.reply({ content: 'Geldim!', ephemeral: true });

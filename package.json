@@ -14,6 +14,7 @@
     "@discordjs/voice": "^0.14.0",
     "@distube/ytdl-core": "^4.16.0",
     "@types/fluent-ffmpeg": "^2.1.20",
+    "axios": "^1.7.9",
     "bufferutil": "^4.0.6",
     "discord-api-types": "^0.37.29",
     "discord.js": "^14.7.1",
