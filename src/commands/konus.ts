@@ -10,8 +10,11 @@ export const data = new SlashCommandBuilder()
 	.addStringOption(option =>
 		option.setName('içerik')
 			.setRequired(true)
-			.setDescription('Ne söylemeli?'));
-
+			.setDescription('Ne söylemeli?'))
+	.addBooleanOption(option =>
+		option.setName('değiştir')
+			.setRequired(false)
+			.setDescription('Sesimi değiştireyim mi?'));
 
 export async function execute(interaction: ChatInputCommandInteraction) {
 	if (interaction.inGuild()) {
@@ -23,12 +26,13 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 		if (voiceChannel && voiceChannel.joinable) {
 			// get mesaj
 			const mesaj = interaction.options.getString('içerik');
+			const voice_clone = !interaction.options.getBoolean('değiştir');
 			if (!mesaj) {
 				await interaction.editReply('Mesaj belirtmedin.');
 				return;
 			}
 			const startTime = Date.now();
-			const audioFile = await textToSpeech(mesaj);
+			const audioFile = await textToSpeech(mesaj, voice_clone);
 			// print time it takes to generate the audio file
 			const timeTaken = (Date.now() - startTime) / 1000;
 			console.log(`TTS request in ${timeTaken}s : ${mesaj}`);
