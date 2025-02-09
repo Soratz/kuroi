@@ -54,7 +54,7 @@ async function execute(interaction: BaseInteraction) {
 			} catch (error) {
 				console.error(error);
 				if (interaction.deferred) {
-					await interaction.editReply({ content: 'Bir hata oluştu!', embeds: [], components: [] });
+					await interaction.editReply('Bir hata oluştu!');
 				}
 			}
 		}

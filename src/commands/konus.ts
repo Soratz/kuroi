@@ -19,27 +19,32 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 		const guildMember = interaction.member as GuildMember;
 		const voiceState = guildMember.voice;
 		const voiceChannel = voiceState.channel;
+		await interaction.deferReply({ ephemeral: true });
 		if (voiceChannel && voiceChannel.joinable) {
 			// get mesaj
 			const mesaj = interaction.options.getString('içerik');
 			if (!mesaj) {
-				await interaction.reply({ content: 'Mesaj belirtmedin.', flags: MessageFlags.Ephemeral });
+				await interaction.editReply('Mesaj belirtmedin.');
 				return;
 			}
-			console.log('TTS request: ', mesaj);
+			const startTime = Date.now();
 			const audioFile = await textToSpeech(mesaj);
+			// print time it takes to generate the audio file
+			const timeTaken = (Date.now() - startTime) / 1000;
+			console.log(`TTS request in ${timeTaken}s : ${mesaj}`);
 			if (!audioFile) {
-				await interaction.reply({ content: 'Bir şeyler ters gitti.', flags: MessageFlags.Ephemeral });
+				await interaction.editReply('Bir şeyler ters gitti.');
 				return;
 			}
+
 			client.playAudioFile(voiceChannel as VoiceChannel, audioFile);
-			await interaction.reply({ content: 'Geldim!', flags: MessageFlags.Ephemeral });
+			await interaction.editReply('Konuştum!');
 		} else {
-			await interaction.reply({ content: 'Senin olduğun yere pek gelesim yok', flags: MessageFlags.Ephemeral });
+			await interaction.editReply('Senin olduğun yere pek gelesim yok');
 		}
 
 	} else {
-		await interaction.reply({ content: 'Sunucuda değilsen söylemem :/', flags: MessageFlags.Ephemeral });
+		await interaction.editReply('Sunucuda değilsen söylemem :/');
 	}
 	return;
 }
