@@ -26,7 +26,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 		if (voiceChannel && voiceChannel.joinable) {
 			// get mesaj
 			const mesaj = interaction.options.getString('içerik');
-			const voice_clone = !interaction.options.getBoolean('değiştir');
+			const voice_clone = interaction.options.getBoolean('değiştir') ?? false;
 			if (!mesaj) {
 				await interaction.editReply('Mesaj belirtmedin.');
 				return;
