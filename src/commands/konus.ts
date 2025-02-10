@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
-import { ChatInputCommandInteraction, GuildMember, MessageFlags, VoiceChannel } from 'discord.js';
+import { ChatInputCommandInteraction, GuildMember, VoiceChannel } from 'discord.js';
 
 import { DiscordClient } from '../classes/discordClient.js';
 import { textToSpeech } from '../classes/textToSpeech.js';

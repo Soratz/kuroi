@@ -7,6 +7,7 @@ import { AudioPlayer, AudioResource, createAudioResource, entersState, getVoiceC
 import { createAudioPlayer } from '@discordjs/voice';
 import * as path from 'path';
 import internal from 'stream';
+import { ReminderManager } from './reminder';
 
 export { DiscordClient };
 
@@ -21,6 +22,7 @@ class DiscordClient extends Client {
 	audioQueues: Collection<string, DiscordAudioQueue>;
 	fileAudioPlayers: Collection<string, AudioPlayer>;
 	weakConnections: WeakSet<VoiceConnection>;
+	reminderManager: ReminderManager;
 	cookies: Cookie[];
 	follow: boolean;
 
@@ -32,6 +34,7 @@ class DiscordClient extends Client {
 		this.audioQueues = new Collection();
 		this.fileAudioPlayers = new Collection();
 		this.weakConnections = new WeakSet<VoiceConnection>();
+		this.reminderManager = new ReminderManager();
 		this.cookies = this.loadCookies();
 		this.follow = true;
 	}
