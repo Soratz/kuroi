@@ -3,18 +3,39 @@ import { Collection, User } from 'discord.js';
 export class ReminderManager {
 	reminderList: Collection<string, Reminder>;
 	reminderCheckInterval: NodeJS.Timeout | null;
+	closestReminder: Reminder | null;
 
 	constructor() {
 		this.reminderList = new Collection();
 		this.reminderCheckInterval = null;
+		this.closestReminder = null;
 	}
 
 	addReminder(reminder: Reminder) {
 		// Each user can only have one reminder at a time
 		this.reminderList.set(reminder.user.id, reminder);
+		// Check closes after each addition
+		this.closestReminder = this.findClosestReminder();
 		if (!this.reminderCheckInterval) {
 			this.startReminderCheck();
 		}
+	}
+
+	findClosestReminder() {
+		// Find the closest reminder to the current time
+		const now = Date.now();
+		let closestReminder = null;
+		let closestTime = Infinity;
+
+		this.reminderList.forEach((reminder) => {
+			const timeDiff = reminder.reminder_time - now;
+			if (timeDiff < closestTime) {
+				closestTime = timeDiff;
+				closestReminder = reminder;
+			}
+		});
+
+		return closestReminder;
 	}
 
 	hasReminder(user: User) {
@@ -25,33 +46,49 @@ export class ReminderManager {
 		this.reminderList.delete(reminder.user.id);
 	}
 
+	deferReminder(reminder: Reminder, minutes = 1) {
+		// defer reminder by minutes if its in the list
+		if (this.reminderList.has(reminder.user.id)) {
+			reminder.reminder_time += minutes * 60 * 1000;
+			this.closestReminder = this.findClosestReminder();
+		}
+	}
+
 	checkReminders() {
 		try {
-			this.reminderList.forEach((reminder) => {
-				if (reminder.checkReminder()) {
-					reminder.sendReminder(`Hey bunu hatırlaman lazım!: ${reminder.message}`);
-					this.removeReminder(reminder);
-					if (this.reminderList.size === 0) {
-						this.stopReminderCheck();
-					}
+			// If there is a closest reminder and it has passed, send the reminder and remove it
+			if (this.closestReminder && this.closestReminder.checkReminder()) {
+				const result = this.closestReminder.sendReminder(`Hey bunu hatırlaman lazım! -> ${this.closestReminder.message}`);
+				if (!result) {
+					this.deferReminder(this.closestReminder, 5);
+					return;
 				}
-
-			});
+				this.removeReminder(this.closestReminder);
+				// If there are no reminders left, stop the reminder check
+				if (this.reminderList.size === 0) {
+					this.stopReminderCheck();
+				} else {
+					// If there are still reminders, find the new closest reminder
+					this.closestReminder = this.findClosestReminder();
+				}
+			}
 		} catch (error) {
 			console.error(`Error checking ${this.reminderList.size} reminders: ${error}`);
 		}
 	}
 
 	startReminderCheck() {
+		// Check every 5 seconds
 		this.reminderCheckInterval = setInterval(() => {
 			this.checkReminders();
-		}, 1000);
+		}, 5000);
 	}
 
 	stopReminderCheck() {
 		if (this.reminderCheckInterval) {
 			clearInterval(this.reminderCheckInterval);
 			this.reminderCheckInterval = null;
+			this.closestReminder = null;
 		}
 	}
 
@@ -82,6 +119,12 @@ export class Reminder {
 	}
 
 	sendReminder(message: string) {
-		this.user.send(message);
+		try {
+			this.user.send(message);
+			return true;
+		} catch (error) {
+			console.error(`Error sending reminder to ${this.user.username}: ${error}`);
+			return false;
+		}
 	}
 }
