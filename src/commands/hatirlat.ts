@@ -16,14 +16,19 @@ export const data = new SlashCommandBuilder()
 			.setRequired(true)
 			.setMinValue(0)
 			.setMaxValue(1440)
-			.setDescription('Kaç dakika sonra hatırlatayım?'));
+			.setDescription('Kaç dakika sonra hatırlatayım?'))
+	.addUserOption(option =>
+		option.setName('kime')
+			.setRequired(false)
+			.setDescription('Kime hatırlatayım?'));
 
 export async function execute(interaction: ChatInputCommandInteraction) {
 	const user = interaction.user;
 	const client = interaction.client as DiscordClient;
 	const message = interaction.options.getString('içerik', true);
 	const minutes = interaction.options.getInteger('dakika', true);
-	const reminder = new Reminder(message, minutes, user);
+	const target_user = interaction.options.getUser('kime');
+	const reminder = new Reminder(message, minutes, user, target_user);
 
 	let reply_message = `${minutes} dakika sonra hatırlatacağım. (>ᴗ•)/`;
 	if (client.reminderManager.hasReminder(user)) {

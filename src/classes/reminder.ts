@@ -13,7 +13,7 @@ export class ReminderManager {
 
 	addReminder(reminder: Reminder) {
 		// Each user can only have one reminder at a time
-		this.reminderList.set(reminder.user.id, reminder);
+		this.reminderList.set(reminder.target_user.id, reminder);
 		// Check closes after each addition
 		this.closestReminder = this.findClosestReminder();
 		if (!this.reminderCheckInterval) {
@@ -43,12 +43,12 @@ export class ReminderManager {
 	}
 
 	removeReminder(reminder: Reminder) {
-		this.reminderList.delete(reminder.user.id);
+		this.reminderList.delete(reminder.target_user.id);
 	}
 
 	deferReminder(reminder: Reminder, minutes = 1) {
 		// defer reminder by minutes if its in the list
-		if (this.reminderList.has(reminder.user.id)) {
+		if (this.reminderList.has(reminder.target_user.id)) {
 			reminder.reminder_time += minutes * 60 * 1000;
 			this.closestReminder = this.findClosestReminder();
 		}
@@ -58,7 +58,13 @@ export class ReminderManager {
 		try {
 			// If there is a closest reminder and it has passed, send the reminder and remove it
 			if (this.closestReminder && this.closestReminder.checkReminder()) {
-				const result = await this.closestReminder.sendReminder(`Hey bunu hatırlaman lazım! -> ${this.closestReminder.message}`);
+				let message;
+				if (this.closestReminder.creator_user.id !== this.closestReminder.target_user.id) {
+					message = `Hey, ${this.closestReminder.creator_user.username} bunu hatırlamanı istedi -> ${this.closestReminder.message}`;
+				} else {
+					message = `Hey, bunu hatırlaman lazım -> ${this.closestReminder.message}`;
+				}
+				const result = await this.closestReminder.sendReminder(message);
 				if (!result) {
 					this.deferReminder(this.closestReminder, 5);
 					return;
@@ -104,14 +110,16 @@ export class Reminder {
 	message: string;
 	time_added: number;
 	reminder_time: number;
-	user: User;
+	target_user: User;
+	creator_user: User;
 
-	constructor(message: string, minutes: number, user: User) {
+	constructor(message: string, minutes: number, creator_user: User, target_user: User | null) {
 		this.message = message;
 		this.time_added = Date.now();
 		// convert minutes to milliseconds
 		this.reminder_time = minutes * 60 * 1000;
-		this.user = user;
+		this.creator_user = creator_user;
+		this.target_user = target_user ?? creator_user;
 	}
 
 	checkReminder() {
@@ -120,10 +128,10 @@ export class Reminder {
 
 	async sendReminder(message: string) {
 		try {
-			await this.user.send(message);
+			await this.target_user.send(message);
 			return true;
 		} catch (error) {
-			console.error(`Error sending reminder to ${this.user.username}: ${error}`);
+			console.error(`Error sending reminder from ${this.creator_user.username} to ${this.target_user.username}: ${error}`);
 			return false;
 		}
 	}
