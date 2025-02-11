@@ -158,8 +158,7 @@ class DiscordClient extends Client {
 
 	setupCleanup() {
 		// Handle normal exit
-		process.on('SIGINT', async () => await this.cleanup());
-		process.on('SIGTERM', async () => await this.cleanup());
+		process.on('exit', async (code) => await this.cleanup());
 
 		// Handle uncaught exceptions
 		process.on('uncaughtException', async (error) => {
@@ -182,8 +181,5 @@ class DiscordClient extends Client {
 		} catch (error) {
 			console.error('Error sending reminders:', error);
 		}
-
-		// Exit process
-		process.exit(0);
 	}
 }
