@@ -54,11 +54,11 @@ export class ReminderManager {
 		}
 	}
 
-	checkReminders() {
+	async checkReminders() {
 		try {
 			// If there is a closest reminder and it has passed, send the reminder and remove it
 			if (this.closestReminder && this.closestReminder.checkReminder()) {
-				const result = this.closestReminder.sendReminder(`Hey bunu hatırlaman lazım! -> ${this.closestReminder.message}`);
+				const result = await this.closestReminder.sendReminder(`Hey bunu hatırlaman lazım! -> ${this.closestReminder.message}`);
 				if (!result) {
 					this.deferReminder(this.closestReminder, 5);
 					return;
@@ -79,8 +79,8 @@ export class ReminderManager {
 
 	startReminderCheck() {
 		// Check every 5 seconds
-		this.reminderCheckInterval = setInterval(() => {
-			this.checkReminders();
+		this.reminderCheckInterval = setInterval(async () => {
+			await this.checkReminders();
 		}, 5000);
 	}
 
@@ -92,9 +92,9 @@ export class ReminderManager {
 		}
 	}
 
-	remindAll() {
-		this.reminderList.forEach((reminder) => {
-			reminder.sendReminder(`Ben şimdi çıkıyorum. Bunu hatırlaman lazım: ${reminder.message}`);
+	async remindAll() {
+		this.reminderList.forEach(async (reminder) => {
+			await reminder.sendReminder(`Ben şimdi çıkıyorum. Bunu hatırlaman lazım: ${reminder.message}`);
 		});
 	}
 }
@@ -118,9 +118,9 @@ export class Reminder {
 		return (Date.now() - this.time_added >= this.reminder_time);
 	}
 
-	sendReminder(message: string) {
+	async sendReminder(message: string) {
 		try {
-			this.user.send(message);
+			await this.user.send(message);
 			return true;
 		} catch (error) {
 			console.error(`Error sending reminder to ${this.user.username}: ${error}`);

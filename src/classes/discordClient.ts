@@ -158,27 +158,27 @@ class DiscordClient extends Client {
 
 	setupCleanup() {
 		// Handle normal exit
-		process.on('SIGINT', () => this.cleanup());
-		process.on('SIGTERM', () => this.cleanup());
+		process.on('SIGINT', async () => await this.cleanup());
+		process.on('SIGTERM', async () => await this.cleanup());
 
 		// Handle uncaught exceptions
-		process.on('uncaughtException', (error) => {
+		process.on('uncaughtException', async (error) => {
 			console.error('Uncaught Exception:', error);
-			this.cleanup();
+			await this.cleanup();
 		});
 
 		// Handle unhandled promise rejections
-		process.on('unhandledRejection', (error) => {
+		process.on('unhandledRejection', async (error) => {
 			console.error('Unhandled Rejection:', error);
-			this.cleanup();
+			await this.cleanup();
 		});
 	}
 
-	private cleanup() {
+	private async cleanup() {
 		console.log('Cleaning up before exit...');
 		try {
 			// Send all pending reminders
-			this.reminderManager.remindAll();
+			await this.reminderManager.remindAll();
 		} catch (error) {
 			console.error('Error sending reminders:', error);
 		}
