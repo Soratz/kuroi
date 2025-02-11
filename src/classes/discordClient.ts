@@ -37,6 +37,7 @@ class DiscordClient extends Client {
 		this.reminderManager = new ReminderManager();
 		this.cookies = this.loadCookies();
 		this.follow = true;
+		this.setupCleanup();
 	}
 
 	private loadCookies(): Cookie[] {
@@ -153,5 +154,36 @@ class DiscordClient extends Client {
 				user.setActivity(name, { type: type });
 			}
 		}
+	}
+
+	setupCleanup() {
+		// Handle normal exit
+		process.on('SIGINT', () => this.cleanup());
+		process.on('SIGTERM', () => this.cleanup());
+
+		// Handle uncaught exceptions
+		process.on('uncaughtException', (error) => {
+			console.error('Uncaught Exception:', error);
+			this.cleanup();
+		});
+
+		// Handle unhandled promise rejections
+		process.on('unhandledRejection', (error) => {
+			console.error('Unhandled Rejection:', error);
+			this.cleanup();
+		});
+	}
+
+	private cleanup() {
+		console.log('Cleaning up before exit...');
+		try {
+			// Send all pending reminders
+			this.reminderManager.remindAll();
+		} catch (error) {
+			console.error('Error sending reminders:', error);
+		}
+
+		// Exit process
+		process.exit(0);
 	}
 }
