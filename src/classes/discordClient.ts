@@ -3,9 +3,11 @@ import { DiscordAudioQueue } from './discordAudioQueue';
 import { existsSync, readFileSync } from 'fs';
 import { Cookie } from '@distube/ytdl-core';
 import { decodeHtmlEntities } from '../utils/string_utils';
-import { AudioPlayer, createAudioResource, entersState, getVoiceConnection, joinVoiceChannel, VoiceConnection, VoiceConnectionStatus } from '@discordjs/voice';
+import { AudioPlayer, AudioResource, createAudioResource, entersState, getVoiceConnection, joinVoiceChannel, VoiceConnection, VoiceConnectionStatus } from '@discordjs/voice';
 import { createAudioPlayer } from '@discordjs/voice';
 import * as path from 'path';
+import internal from 'stream';
+import { ReminderManager } from './reminder';
 
 export { DiscordClient };
 
@@ -19,6 +21,8 @@ class DiscordClient extends Client {
 	// A collection of discord audio queues for each server.
 	audioQueues: Collection<string, DiscordAudioQueue>;
 	fileAudioPlayers: Collection<string, AudioPlayer>;
+	weakConnections: WeakSet<VoiceConnection>;
+	reminderManager: ReminderManager;
 	cookies: Cookie[];
 	follow: boolean;
 
@@ -29,8 +33,11 @@ class DiscordClient extends Client {
 		this.buttonCommands = new Collection();
 		this.audioQueues = new Collection();
 		this.fileAudioPlayers = new Collection();
+		this.weakConnections = new WeakSet<VoiceConnection>();
+		this.reminderManager = new ReminderManager();
 		this.cookies = this.loadCookies();
 		this.follow = true;
+		this.setupCleanup();
 	}
 
 	private loadCookies(): Cookie[] {
@@ -59,6 +66,9 @@ class DiscordClient extends Client {
 				adapterCreator: voiceChannel.guild.voiceAdapterCreator,
 				selfDeaf: false,
 			});
+			// if connection is already in the weak set, return it
+			// this is to prevent adding multiple listeners on the same connection
+			if (this.weakConnections.has(connection)) return connection;
 			connection.on('stateChange', (oldState, newState) => {
 				const oldNetworking = Reflect.get(oldState, 'networking');
 				const newNetworking = Reflect.get(newState, 'networking');
@@ -88,21 +98,27 @@ class DiscordClient extends Client {
 					this.audioQueues.get(voiceChannel.guild.id)?.empty();
 				}
 			});
+			this.weakConnections.add(connection);
 			return connection;
 		}
 		return undefined;
 	}
 
 
-	playAudioFile(voiceChannel: VoiceChannel, audioResource: string) {
+	playAudioFile(voiceChannel: VoiceChannel, audioResource: string | internal.Readable) {
 		// check if a player is already exists for a server
-		let player = this.fileAudioPlayers.get(voiceChannel.guild.id);
-		const filePath = path.join(__dirname, '..', '..', 'resources', 'audio', audioResource);
-		if (!existsSync(filePath)) {
-			throw new Error(`Audio file not found: ${filePath}`);
-		}
-		const resource = createAudioResource(filePath);
+		let resource: AudioResource<unknown>;
+		if (typeof audioResource === 'string') {
+			const filePath = path.join(__dirname, '..', '..', 'resources', 'audio', audioResource);
+			if (!existsSync(filePath)) {
+				throw new Error(`Audio file not found: ${filePath}`);
+			}
+			resource = createAudioResource(filePath);
 
+		} else {
+			resource = createAudioResource(audioResource);
+		}
+		let player = this.fileAudioPlayers.get(voiceChannel.guild.id);
 		if (player) {
 			player.play(resource);
 		} else {
@@ -113,9 +129,11 @@ class DiscordClient extends Client {
 		const voiceConnection = this.createOrGetVoiceConnection(voiceChannel);
 		if (voiceConnection) {
 			voiceConnection.subscribe(player);
+			return voiceConnection;
 		} else {
 			console.log('No voice connection found for voice channel:', voiceChannel.id);
 			player.stop(true);
+			return undefined;
 		}
 	}
 
@@ -135,6 +153,33 @@ class DiscordClient extends Client {
 			if (user && name) {
 				user.setActivity(name, { type: type });
 			}
+		}
+	}
+
+	setupCleanup() {
+		// Handle normal exit
+		process.on('exit', async (code) => await this.cleanup());
+
+		// Handle uncaught exceptions
+		process.on('uncaughtException', async (error) => {
+			console.error('Uncaught Exception:', error);
+			await this.cleanup();
+		});
+
+		// Handle unhandled promise rejections
+		process.on('unhandledRejection', async (error) => {
+			console.error('Unhandled Rejection:', error);
+			await this.cleanup();
+		});
+	}
+
+	private async cleanup() {
+		console.log('Cleaning up before exit...');
+		try {
+			// Send all pending reminders
+			await this.reminderManager.remindAll();
+		} catch (error) {
+			console.error('Error sending reminders:', error);
 		}
 	}
 }

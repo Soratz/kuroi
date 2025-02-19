@@ -40,7 +40,6 @@ async function execute(interaction: BaseInteraction) {
 				await searchCommand.selectSong(interaction);
 			} catch (error) {
 				console.error(error);
-				await interaction.update({ content: 'Bir hata oluştu!', embeds: [], components: [] });
 			}
 		}
 	}
@@ -54,7 +53,9 @@ async function execute(interaction: BaseInteraction) {
 				await command.execute(interaction);
 			} catch (error) {
 				console.error(error);
-				await interaction.reply({ content: 'Bir hata oluştu!', ephemeral: true });
+				if (interaction.deferred) {
+					await interaction.editReply('Bir hata oluştu!');
+				}
 			}
 		}
 	}
